@@ -2,7 +2,7 @@ void updateGripper(){
  if(!gripOff){
   if (newWristGraspCmd){
     // Debug Print
-    Serial.println(String(activeBehavior) + ' ' + String(wristCmd) + ' ' + String(graspCmd));
+    //Serial.println(String(activeBehavior) + ' ' + String(wristCmd) + ' ' + String(graspCmd));
     // Makes sure desired angles are acceptable
     if((wristCmd >= 40 && wristCmd <= 170) && wristCmd != 999){
       Wrist.write(wristCmd);

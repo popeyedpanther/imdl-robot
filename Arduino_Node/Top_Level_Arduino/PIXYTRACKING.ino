@@ -9,10 +9,11 @@ void pixyTracking(){
   blocks = ffPixy.getBlocks();
   
   // Reset object and place in cCodesDone array
-  if(objectPlaced){
-    foundObject = false;
+  if(objectPlaced == 1){
+    foundObject = 0;
     cCodesDone[count] = activeSignature;
     count++;
+    objectPlaced = 0;
   }  
   
   // Search for color code objects
@@ -23,25 +24,28 @@ void pixyTracking(){
        for(k=0; k<cCodesSize; k++){
          // Only say an object was found if it also has not already been found
          if(ffPixy.blocks[j].signature != cCodesDone[k]){
-           foundObject = true;
+           foundObject = 1;
            activeSignature = ffPixy.blocks[j].signature;
            index = j;
            break;
          }
        }
      }
-     if(foundObject){break;}
+     if(foundObject == 1){break;}
    }
-   if(foundObject){break;} 
+   if(foundObject == 1){break;} 
   }
   
-  if(foundObject && activeBehavior == 2){
-    // Need to update the Odroid to change behaviors.
-    // Need to get object to the center of screen.
-    Serial.println(ffPixy.blocks[index].signature);
-    
-    
-    
+  if(foundObject == 1 && activeBehavior == 2){
+    // Find the signature and update x and y position
+    for(j=0; j<blocks; j++){
+      // If the object matches a color code signature
+      if(ffPixy.blocks[j].signature == activeSignature){
+        xPosition = ffPixy.blocks[j].x;
+        yPosition = ffPixy.blocks[j].y;
+        break;  
+      }
+    }
   }
   
   if(pixyDebug){

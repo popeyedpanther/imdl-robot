@@ -39,9 +39,9 @@ boolean startButton = true;    // Start button needs to be pressed in order for 
 boolean readyBypass = false;    //Used to bypass the serial ready check
 
 // Pixy tracking variables
-boolean foundObject = false, pixyDebug = false, objectPlaced = false;
+boolean pixyDebug = false;
 const int cCodesSize = 1;
-int activeSignature;
+int activeSignature = 0, foundObject = 0, objectPlaced = 0;
 int cCodes[cCodesSize] = {83}, cCodesDone[cCodesSize] = {0};     // Dont forget to update cCodesSize variable if more than one CCode is used.
 int xPosition = 0, yPosition = 0;
 
@@ -78,7 +78,7 @@ void messageParse(){
     // Object has been placed
     temp = piMessage.readInt();
     if (temp == 1){ 
-      objectPlaced = true;
+      objectPlaced = temp;
     }
     
     panCmd = piMessage.readInt();

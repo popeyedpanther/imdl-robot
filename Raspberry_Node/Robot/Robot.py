@@ -18,13 +18,13 @@ class Robot:
         self.OAState = 0
         self.Pan = 0
         self.Tilt = 0
-        self.foundObject = False
+        self.foundObject = 0
         self.objectX = 0
         self.objectY = 0
-        self.motionComplete = False
+        self.motionComplete = 0
         self.OAOverride = False
         # Serial communications for the Arduino Mega
-        self.arduinoMega = serial.Serial(port = '/dev/ttyACM2', baudrate = 9600, timeout = 3, writeTimeout = 3)
+        self.arduinoMega = serial.Serial(port = '/dev/ttyACM1', baudrate = 9600, timeout = 3, writeTimeout = 3)
 
         # Serial communications for the Arduino Uno
         self.arduinoUno = serial.Serial(port = '/dev/ttyACM0', baudrate = 9600, timeout = 3, writeTimeout = 3)
@@ -81,11 +81,11 @@ class Robot:
     def requestMega(self):
         self.arduinoMega.flushInput()
         self.writeMega('9:0:0:999:999:99:1:9:\r')
-        sleep(0.1)
+        sleep(0.2)
         message = self.arduinoMega.readline().split(':')
         # Parse the message here
         self.stateUpdate([message[0], message[1],  message[2]])
-        self.motionComplete = bool(message[3])
+        self.motionComplete = int(message[3])
         self.OAOverride = bool(message[4])
 
     def requestUno(self):
@@ -96,7 +96,7 @@ class Robot:
         # Parse the message here
         self.Pan = int(message[0])
         self.Tilt = int(message[1])
-        self.foundObject = bool(message[2])
+        self.foundObject = int(message[2])
         self.objectX = int(message[3])
         self.objectY = int(message[4])
 

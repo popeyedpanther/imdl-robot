@@ -70,22 +70,25 @@ while continuousRun:
     currentClock = clock()
 
     # Update information from the Arduinos
-    if currentClock - previousClock > 0.05:
+    if currentClock - previousClock > 1:
         previousClock = currentClock
         Bob.requestMega()
         Bob.requestUno()
+        print Bob.foundObject
 
     # Behavior changes
-    if not Bob.foundObject:      # Searches for the block
+    if Bob.foundObject != 1:      # Searches for the block
         if Bob.behavior != 1:
             Bob.updateBehavior(1)
             robotAligned = False
-            if not Bob.OAOverride:
-                Bob.move('S',0)
+            print 'Searching'
 
-    elif Bob.foundObject and not pickedupObject:        # Picks up the block
+    elif Bob.foundObject == 1 and not pickedupObject:        # Picks up the block
         if Bob.behavior != 2:
             Bob.updateBehavior(2)
+            if not Bob.OAOverride:
+                Bob.move('S',0)
+            print "I found an object"
 
     elif pickedupObject and not droppedBlock:     # Should localize and drop the block
         ## Should cross of that block from search list
@@ -93,14 +96,15 @@ while continuousRun:
 
         if Bob.behavior != 3:
             Bob.updateBehavior(3)
-
+            print "I Dropped the block"
+        
     elif droppedBlock:
         # if all blocks are found then task is complete else return to
 
         if blocksDone:
             taskComplete = True
         else:
-            Bob.foundBlock = False
+            Bob.foundBlock = 0
             pickedupObject = False
             droppedBlock = False
 
@@ -148,9 +152,9 @@ while continuousRun:
             sleep(0.2)
 
     elif Bob.behavior == 3:
-
+        droppedBlock = True
     elif Bob.behavior == 4:
-
+        taskComplete = True
     if taskComplete:
         # Stop robot functions and then break loop
         break
