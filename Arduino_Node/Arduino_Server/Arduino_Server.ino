@@ -18,7 +18,7 @@
 //-------Include Libraries-----------------------------------
 #include <Servo.h>
 // Patrick's Custom Motor Controls ( Mostly for Drive motor control with hall effect encoder)
-#include <DualVNH5019MotorShield.h> // For use with the Dual motor drivers from Pololu
+#include <DualVNH5019MotorDriver.h> // For use with the Dual motor drivers from Pololu
 #include <LiquidCrystal.h> // For use a LCD display
 
 
@@ -112,7 +112,7 @@ Servo Lower;
 Servo Grasp;
 
 // Define drive motor object
-DualVNH5019MotorShield Drive_Motors;
+DualVNH5019MotorDriver Drive_Motors;
 Drive_Motors._INA1 = Drive_INA1;
 Drive_Motors._INB1 = Drive_INB1;
 Drive_Motors._PWM1 = PWMDrivePin_Left;
@@ -125,7 +125,7 @@ Drive_Motors._PWM2 = PWMDrivePin_Right;
 Drive_Motors._END2DIAG2 = Drive_END2DIAG2;
 Drive_Motors._CS2 = Current_Right_Pin;
  
-DualVNH5019MotorShield Pan_Motor;
+DualVNH5019MotorDriver Pan_Motor;
 Pan_Motor._Timer = 3;
 Pan_Motor._INA1 = Pan_INA1;
 Pan_Motor._INB1 = Pan_INB1;
