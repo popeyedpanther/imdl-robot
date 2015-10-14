@@ -74,7 +74,7 @@ const int Current_Right_Pin = 9;   // A9, CS2
 const int Current_Pan_Pin = 10;     // A10, CS1
 
 // Push button start
-const int Push_button = A13; // For push to start button
+//const int Push_button = A13; // For push to start button
 
 // ---Sensor sampling periods---
 const unsigned long irPeriod = 10;      // Sampling period for IR Sensors (ms)
@@ -112,12 +112,13 @@ volatile boolean bumpFlag = false;   //
 unsigned long currentMillis;          // Stores the current time reading in milliseconds
 unsigned long previousMillis_IR=0;      // Stores the previous time the IR sensors were read
 unsigned long previousMillis_Current=0; // Stores the previous time the Current sensors were read
-unsigned long previousMillis_Bump;    // Stores the previous time the Bump sensors were read
+unsigned long previousMillis_Bump=0;    // Stores the previous time the Bump sensors were read
 
 // Arbiter Variablers
 boolean actionLock = false;
+boolean actionOverride = false;
 unsigned long timerLockout = 750;
-unsigned long actionTimer;
+unsigned long actionTimer =0;
 
 //// Define servo objects
 //Servo Tilt;
@@ -169,19 +170,11 @@ void setup()  // Needs to stay in setup until all necessary communications can b
 
   pinMode(Bump_Left,INPUT);
   pinMode(Bump_Right,INPUT);
-  
-  //digitalWrite(Bump_Left,HIGH);
 
   // Attached Interrupt pins
-  //attachInterrupt(0, bumpLeft, RISING);  // Digital Pin 2
-  //attachInterrupt(1, bumpRight, RISING); // Digital Pin 3
+  attachInterrupt(0, bumpLeft, RISING);  // Digital Pin 2
+  attachInterrupt(1, bumpRight, RISING); // Digital Pin 3
   
-  pinMode(13,OUTPUT);
-
-  
-  //digitalWrite(Bump_Left,HIGH);
-  
-
   // Initiliaze serial communications
   Serial.begin(9600);           // set up Serial library at 9600 bps  boolean readyBypass = true; 
 
@@ -224,22 +217,17 @@ void loop() // run over and over again
   // Should always check IR and Bump sensors before performing requested tasks.
   // Camera positioning should not be overrid by obstacle avoidance behaviors
 
-  // Read all sensor input before deciding course of action
-  // Rate of Sensor Collection 
 
   // Encoder counter will always run and cannot be blocked.
 
-  
-
-
-//  if(bumpRecomnd == 2){
-//   Serial.println("bump Left"); 
-//    bumpRecomnd = 0;  
-//  }
-//  else if(bumpRecomnd == 3){
-//    Serial.println("Bump Right");
-//    bumpRecomnd = 0;
-//  }
+  if(bumpRecomnd == 2){
+   Serial.println("bump Left"); 
+    bumpRecomnd = 0;  
+  }
+  else if(bumpRecomnd == 3){
+    Serial.println("Bump Right");
+    bumpRecomnd = 0;
+  }
   
   currentMillis = millis(); // Program run time in milliseconds. Used for sensor sampling.
 
@@ -261,10 +249,16 @@ void loop() // run over and over again
     irLeftAvg = (float(irLeft[0])+float(irLeft[1])+float(irLeft[2]))/3;
     irRightAvg = (float(irRight[0])+float(irRight[1])+float(irRight[2]))/3;
     
-    //Serial.print(leftString + String(irLeftAvg) + " " );
-    //Serial.println(rightString + String(irRightAvg));  
+    Serial.print(leftString + String(irLeftAvg) + " " );
+    Serial.println(rightString + String(irRightAvg));  
     
-    if((irRightAvg-irLeftAvg)<eps && (irLeftAvg <= 175 && irLeftAvg > 120)\
+
+    if (irLeftAvg > 180 || irRightAvg > 200){
+      // reverse and turn left or right`
+      bumpRecomnd = 4;
+      bumpFlag = true;
+    }
+    else if((irRightAvg-irLeftAvg)<eps && (irLeftAvg <= 175 && irLeftAvg > 120)\
           && (irRightAvg <= 190 && irRightAvg > 130)) {
     
       irRecomnd = 1;  // Turn left or right
@@ -274,9 +268,6 @@ void loop() // run over and over again
     }
     else if(irRightAvg <= 190 && irRightAvg > 130 && irLeftAvg < 120){
       irRecomnd = 3;  // Turn left some random amount
-    }
-    else if(irLeftAvg > 180 && irRightAvg > 200){
-      irRecomnd = 4; // Reverse and turn left or right
     }
     else{
       irRecomnd = 0;
@@ -313,10 +304,10 @@ void loop() // run over and over again
     currentLeftAvg = (float(currentLeft[0]) + float(currentLeft[1]) + float(currentLeft[2]))/3;
     currentRightAvg = (float(currentRight[0]) + float(currentRight[1]) + float(currentRight[2]))/3;
     
-    Serial.print("Left Current: " + String(currentLeftAvg) + " " );
-    Serial.println("Right Current: " + String(currentRightAvg)); 
+    //Serial.print("Left Current: " + String(currentLeftAvg) + " " );
+    //Serial.println("Right Current: " + String(currentRightAvg)); 
     
-    if(currentLeftAvg >= 1000 || currentRightAvg >= 1000 {
+    if(currentLeftAvg >= 1000 || currentRightAvg >= 1000) {
     
       currentRecomnd = 6;  // Arbitraty number for now just to trigger the flag.
     }
@@ -337,79 +328,94 @@ void loop() // run over and over again
     //Current_Pan  = Pan_Motor.getM1CurrentMilliamps();
 
 
-    }
-    
-    //Serial.println(digitalRead(Bump_Left));
-    
-  // Driving will be done here
-  // Any sensor flag will trigger alternative behavior
-  if (currentFlag || bumpFlag || irFlag) { 
-    if (currentRecomnd == 1 || bumpRecomnd == 1 || irRecomnd == 1) {
-      
+  }
+
+  if((currentMillis - actionTimer) >= random(750,1750) || actionOverride){     
+     actionLock = false;
+
+     if(bumpFlag && bumpRecomnd == 0){
       if(random(0,9)/5 == 1){
         if(!actionLock){ // Right Turn
           actionLock = true;
-          driveMotors.setM1Speed(100);
-          driveMotors.setM2Speed(100);
+          driveMotors.setM1Speed(75);
+          driveMotors.setM2Speed(75);
           actionTimer = currentMillis;
         }
       }
       else{
         if(!actionLock){ // Left Turn
           actionLock = true;
-          driveMotors.setM1Speed(-100);
-          driveMotors.setM2Speed(-100);
+          driveMotors.setM1Speed(-75);
+          driveMotors.setM2Speed(-75);
+          actionTimer = currentMillis;
+        }
+      }
+      bumpFlag = false;
+     }  
+     actionOverride = false;
+  }
+       
+  // Driving will be done here
+  // Any sensor flag will trigger alternative behavior
+  if (currentFlag || bumpFlag || irFlag) {
+    if ((currentRecomnd == 1 || irRecomnd == 1) && !bumpFlag) {
+    // Reverse and then turn left or right
+      if(random(0,9)/5 == 1){
+        if(!actionLock){ // Right Turn
+          actionLock = true;
+          driveMotors.setM1Speed(75);
+          driveMotors.setM2Speed(75);
+          actionTimer = currentMillis;
+        }
+      }
+      else{
+        if(!actionLock){ // Left Turn
+          actionLock = true;
+          driveMotors.setM1Speed(-75);
+          driveMotors.setM2Speed(-75);
           actionTimer = currentMillis;
         }
       }
       
     }
-    else if(currentRecomnd == 2 || bumpRecomnd == 2 || irRecomnd == 2){
+    else if((currentRecomnd == 2 || irRecomnd == 2) && !bumpFlag ){
       if(!actionLock){ // Right Turn
         actionLock = true;
-        driveMotors.setM1Speed(100);
-        driveMotors.setM2Speed(100);
+        driveMotors.setM1Speed(75);
+        driveMotors.setM2Speed(75);
         actionTimer = currentMillis;
       }
       
     }
-    else if(currentRecomnd == 3 || irRecomnd == 3){
+    else if((currentRecomnd == 3 || irRecomnd == 3) && !bumpFlag){
       if(!actionLock){ // Left Turn
         actionLock = true;
-        driveMotors.setM1Speed(-100);
-        driveMotors.setM2Speed(-100);
+        driveMotors.setM1Speed(-75);
+        driveMotors.setM2Speed(-75);
         actionTimer = currentMillis;
       }
       
     }
     else if(bumpRecomnd == 4){
-      
+      // Reverse motion
       if(!actionLock){
         actionLock = true;
-        driveMotors.setM1Speed(100);
-        driveMotors.setM2Speed(-100);
+        driveMotors.setM1Speed(75);
+        driveMotors.setM2Speed(-75);
         actionTimer =  currentMillis;
+        bumpRecomnd = 0;
       }    
                                      
     }
-  // Make sure to reset flag
   }
   else{ // This branch is for normal operations
-    
+    // Forward motion
     if(!actionLock){
-    driveMotors.setM1Speed(-100);
-    driveMotors.setM2Speed(100);
+    driveMotors.setM1Speed(-75);
+    driveMotors.setM2Speed(75);
     }
   }
   
-   if((currentMillis - actionTimer) >= random(1250,2000) || currentFlag){     
-     actionLock = false;
-   }
-   
-  // Perform requested camera movements
-//  Serial.println("Hello world!");  // prints hello with ending line break 
-
-//  delay(1000);
 }
 
 // ---Extra Error Function---
@@ -432,14 +438,16 @@ void stopIfFault()
 void bumpLeft()
 {
   bumpFlag = true;
-  bumpRecomnd = 2;
+  actionOverride = true;
+  bumpRecomnd = 4;
   
 }
 // ---Right Bump Sensor Interrupt Function---
 void bumpRight()
 {
   bumpFlag = true;
-  bumpRecomnd = 3;
+  actionOverride = true;
+  bumpRecomnd = 4;
 }
 
 // ---Encoder Interrupt Functions go Here---
