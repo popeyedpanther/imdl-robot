@@ -44,9 +44,9 @@ const int Drive_INA2=26;     // Right Drive Motor
 const int Drive_INB2=27;     // Right Drive Motor
 const int Drive_EN2DIAG2=25; // Right Drive Motor
 
-// const int Pan_INA1;       // Pan Motor
-// const int Pan_INB1;       // Pan Motor
-// const int Pan_EN1DIAG1;   // Pan Motor
+// const int Pan_INA1=28;       // Pan Motor
+// const int Pan_INB1=29;       // Pan Motor
+// const int Pan_EN1DIAG1=30;   // Pan Motor
 
 // ---Sensor Pins---
 
@@ -77,44 +77,47 @@ const int Current_Pan_Pin = 10;     // A10, CS1
 const int Push_button = A13; // For push to start button
 
 // ---Sensor sampling periods---
-const unsigned long IR_Period = 30;      // Sampling period for IR Sensors (ms)
-const unsigned long Current_Period = 100; // Sampling period for current sensor (ms)
-const unsigned long Bump_Period = 100;    // Sampling period for Bump Switches (ms)
+const unsigned long irPeriod = 10;      // Sampling period for IR Sensors (ms)
+const unsigned long currentPeriod = 100; // Sampling period for current sensor (ms)
 
 // ---Constants---
-const int eps = 2;
+const int eps = 20;
 
 // ---Define non-constant variables---
 int inByte = 0;     // Variable that will store incoming byte from serial
 
-int IR_Left[3] = {0, 0, 0};     // Stores the past 3 Left IR Readings for use in an average
-int IR_Right[3] = {0, 0, 0};    // Stores the past 3 Right IR Reading for use in an average
-int IR_Value;       // Temporary value to store mesured IR reading
-float IR_Left_Avg;  // Used to store left IR average reading
-float IR_Right_Avg; // Used to store right IR average reading
+int irLeft[3] = {0, 0, 0};     // Stores the past 3 Left IR Readings for use in an average
+int irRight[3] = {0, 0, 0};    // Stores the past 3 Right IR Reading for use in an average
+int irValue;       // Temporary value to store mesured IR reading
+int irLeftAvg;  // Used to store left IR average reading
+int irRightAvg; // Used to store right IR average reading
 
-int Current_Left[3];   // Stores Left Drive Motor Current Reading
-int Current_Right[3];  // Stores Right Drive Motor Current Reading
-int Current_Pan[3];    // Stores Pan Motor Current Reading
-int Current_Value;     // For current measurement (amps)
-float Current_Left_Avg;
-float Current_Right_Avg;
-float Current_Pan_Avg;
+int currentLeft[3] = {0, 0, 0};   // Stores Left Drive Motor Current Reading
+int currentRight[3] = {0, 0, 0};  // Stores Right Drive Motor Current Reading
+int currentPan[3] = {0, 0, 0};    // Stores Pan Motor Current Reading
+int currentValue;                 // For current measurement (amps)
+int currentLeftAvg;
+int currentRightAvg;
+int currentPanAvg;
 
 // Sensor Flags
-boolean irFlag;              // Will be set if an IR condition is met
-  int irRecomnd;             // Recommendation will be set depending on specific combintaion of IR readings
-boolean currentFlag;         // Will be set if Current sense condition is met
-  int currentRecomnd;        // Will be set depending of specific combinations
-volatile boolean bumpFlag;   //
-  volatile int bumpRecomnd;  //
+boolean irFlag =false;              // Will be set if an IR condition is met
+  int irRecomnd = 0;             // Recommendation will be set depending on specific combintaion of IR readings
+boolean currentFlag = false;         // Will be set if Current sense condition is met
+  int currentRecomnd = 0;        // Will be set depending of specific combinations
+volatile boolean bumpFlag = false;   //
+  volatile int bumpRecomnd = 0;  //
 
 // Sensor Sampling
 unsigned long currentMillis;          // Stores the current time reading in milliseconds
-unsigned long previousMillis_IR;      // Stores the previous time the IR sensors were read
-unsigned long previousMillis_Current; // Stores the previous time the Current sensors were read
+unsigned long previousMillis_IR=0;      // Stores the previous time the IR sensors were read
+unsigned long previousMillis_Current=0; // Stores the previous time the Current sensors were read
 unsigned long previousMillis_Bump;    // Stores the previous time the Bump sensors were read
 
+// Arbiter Variablers
+boolean actionLock = false;
+unsigned long timerLockout = 750;
+unsigned long actionTimer;
 
 //// Define servo objects
 //Servo Tilt;
@@ -122,7 +125,7 @@ unsigned long previousMillis_Bump;    // Stores the previous time the Bump senso
 //Servo Grasp;
 
 // Define drive motor object
-DualVNH5019MotorDriver Drive_Motors(Drive_INA1,Drive_INB1,PWMDrivePin_Left,\
+DualVNH5019MotorDriver driveMotors(Drive_INA1,Drive_INB1,PWMDrivePin_Left,\
 Drive_EN1DIAG1,Current_Left_Pin,Drive_INA2,Drive_INB2,PWMDrivePin_Right,Drive_EN2DIAG2,\
 Current_Right_Pin, 1);
 
@@ -145,6 +148,10 @@ Current_Right_Pin, 1);
 //Pan_Motor._PWM1 = PWMPanPin;
 //Pan_Motor._END1DIAG1 = Pan_END1DIAG1;
 //Pan_Motor._CS1 = Current_Pan_Pin;
+
+// Test Variables
+const String leftString = "Left IR Reading: ";
+const String rightString = "Right IR Reading: ";
  
 //-------Setup Function-----------------------------------
 
@@ -157,17 +164,28 @@ void setup()  // Needs to stay in setup until all necessary communications can b
 //  Grasp.attach(PWMGraspPin);
 
   // Initialize drive motor object
-  Drive_Motors.init();
+  driveMotors.init();
 //  Pan_Motor.init()
 
+  pinMode(Bump_Left,INPUT);
+  pinMode(Bump_Right,INPUT);
+  
+  //digitalWrite(Bump_Left,HIGH);
+
   // Attached Interrupt pins
-  attachInterrupt(digitalPinToInterrupt(Bump_Left), bumpLeft, RISING);
-  attachInterrupt(digitalPinToInterrupt(Bump_Right), bumpRight, RISING);
+  //attachInterrupt(0, bumpLeft, RISING);  // Digital Pin 2
+  //attachInterrupt(1, bumpRight, RISING); // Digital Pin 3
+  
+  pinMode(13,OUTPUT);
+
+  
+  //digitalWrite(Bump_Left,HIGH);
   
 
   // Initiliaze serial communications
-/*  Serial.begin(9600);           // set up Serial library at 9600 bps  boolean readyBypass = true; 
-  
+  Serial.begin(9600);           // set up Serial library at 9600 bps  boolean readyBypass = true; 
+
+/*  
   while(1){
     // Set readyBypass to true to skip waiting for Raspberry Pi 2 confirmation and button switch confimation
     if (readyBypass){
@@ -212,69 +230,182 @@ void loop() // run over and over again
   // Encoder counter will always run and cannot be blocked.
 
   
+
+
+//  if(bumpRecomnd == 2){
+//   Serial.println("bump Left"); 
+//    bumpRecomnd = 0;  
+//  }
+//  else if(bumpRecomnd == 3){
+//    Serial.println("Bump Right");
+//    bumpRecomnd = 0;
+//  }
+  
   currentMillis = millis(); // Program run time in milliseconds. Used for sensor sampling.
 
-  if (currentMillis - previousMillis_IR >= IR_Period){
+  if (currentMillis - previousMillis_IR >= irPeriod){
     previousMillis_IR = currentMillis;
-    IR_Value = analogRead(IR_Left_Pin);
+    irValue = analogRead(IR_Left_Pin);
     
-    IR_Left[0] = IR_Left[1];
-    IR_Left[1] = IR_Left[2];
-    IR_Left[2] = IR_Value;
+    irLeft[0] = irLeft[1];
+    irLeft[1] = irLeft[2];
+    irLeft[2] = irValue;
     
-    IR_Value = analogRead(IR_Right_Pin);
+    irValue = analogRead(IR_Right_Pin);
     
-    IR_Right[0] = IR_Right[1];
-    IR_Right[1] = IR_Right[2];
-    IR_Right[2] = IR_Value;
+    irRight[0] = irRight[1];
+    irRight[1] = irRight[2];
+    irRight[2] = irValue;
     
+    // Calculate the average input
+    irLeftAvg = (float(irLeft[0])+float(irLeft[1])+float(irLeft[2]))/3;
+    irRightAvg = (float(irRight[0])+float(irRight[1])+float(irRight[2]))/3;
     
+    //Serial.print(leftString + String(irLeftAvg) + " " );
+    //Serial.println(rightString + String(irRightAvg));  
     
+    if((irRightAvg-irLeftAvg)<eps && (irLeftAvg <= 175 && irLeftAvg > 120)\
+          && (irRightAvg <= 190 && irRightAvg > 130)) {
     
-    irFlag = true;
+      irRecomnd = 1;  // Turn left or right
     }
+    else if(irLeftAvg <= 175 && irLeftAvg > 120 && irRightAvg < 130){
+      irRecomnd = 2;  // Turn right some random amount
+    }
+    else if(irRightAvg <= 190 && irRightAvg > 130 && irLeftAvg < 120){
+      irRecomnd = 3;  // Turn left some random amount
+    }
+    else if(irLeftAvg > 180 && irRightAvg > 200){
+      irRecomnd = 4; // Reverse and turn left or right
+    }
+    else{
+      irRecomnd = 0;
+    }
+     
+    // If the IR recommends something then set the flag to true
+    if(irRecomnd != 0){
+      irFlag = true;
+    }
+    else{
+      irFlag = false;
+    }
+    
+    //Serial.println(irFlag);
+    //Serial.println(irRecomnd);
+    
+  }
 
-  if (currentMillis - previousMillis_Current >= Current_Period){
+  if (currentMillis - previousMillis_Current >= currentPeriod){
     previousMillis_Current = currentMillis;
-    Current_Left  = Drive_Motors.getM1CurrentMilliamps();
-    Current_Right = Drive_Motors.getM2CurrentMilliamps();
+    currentValue  = driveMotors.getM1CurrentMilliamps();
+    
+    currentLeft[0] = currentLeft[1];
+    currentLeft[1] = currentLeft[2];
+    currentLeft[2] = currentValue;
+        
+    currentValue = driveMotors.getM2CurrentMilliamps();
+    
+    currentRight[0] = currentRight[1];
+    currentRight[1] = currentRight[2];
+    currentRight[2] = currentValue;
+    
+    // Calculate average current reading over three samples to try to not in spikes.
+    currentLeftAvg = (float(currentLeft[0]) + float(currentLeft[1]) + float(currentLeft[2]))/3;
+    currentRightAvg = (float(currentRight[0]) + float(currentRight[1]) + float(currentRight[2]))/3;
+    
+    Serial.print("Left Current: " + String(currentLeftAvg) + " " );
+    Serial.println("Right Current: " + String(currentRightAvg)); 
+    
+    if(currentLeftAvg >= 1000 || currentRightAvg >= 1000 {
+    
+      currentRecomnd = 6;  // Arbitraty number for now just to trigger the flag.
+    }
+    else{
+      currentRecomnd = 0;
+    }
+     
+    // If the IR recommends something then set the flag to true
+    if(currentRecomnd != 0){
+      currentFlag = true;
+    }
+    else{
+      currentFlag = false;
+    }
+    
+    
     // This needs to set a flag for high current draw
     //Current_Pan  = Pan_Motor.getM1CurrentMilliamps();
 
 
     }
-//  // This if statement might not be needed if using interrupts
-//  if (currentMillis - previousMillis_Bump >= Bump_Period){
-//    previousMillis_Bump = currentMillis; 
-//    // These should be attached as interrupts
-//    // I need a function to be called when they are hit.
-//    Bump_Left  = analogRead(Bump_Left_Pin); // Need to convert these into true or false
-//    Bump_Right = analogRead(Bump_Right_Pin);
-//    }
+    
+    //Serial.println(digitalRead(Bump_Left));
     
   // Driving will be done here
   // Any sensor flag will trigger alternative behavior
   if (currentFlag || bumpFlag || irFlag) { 
     if (currentRecomnd == 1 || bumpRecomnd == 1 || irRecomnd == 1) {
       
-    }
-    else if(currentRecomnd == 2 || bumpRecomnd == 2 || irRecomnd == 2)
+      if(random(0,9)/5 == 1){
+        if(!actionLock){ // Right Turn
+          actionLock = true;
+          driveMotors.setM1Speed(100);
+          driveMotors.setM2Speed(100);
+          actionTimer = currentMillis;
+        }
+      }
+      else{
+        if(!actionLock){ // Left Turn
+          actionLock = true;
+          driveMotors.setM1Speed(-100);
+          driveMotors.setM2Speed(-100);
+          actionTimer = currentMillis;
+        }
+      }
       
     }
-    else if(currentRecomnd == 3 || irRecomnd == 3)
+    else if(currentRecomnd == 2 || bumpRecomnd == 2 || irRecomnd == 2){
+      if(!actionLock){ // Right Turn
+        actionLock = true;
+        driveMotors.setM1Speed(100);
+        driveMotors.setM2Speed(100);
+        actionTimer = currentMillis;
+      }
+      
+    }
+    else if(currentRecomnd == 3 || irRecomnd == 3){
+      if(!actionLock){ // Left Turn
+        actionLock = true;
+        driveMotors.setM1Speed(-100);
+        driveMotors.setM2Speed(-100);
+        actionTimer = currentMillis;
+      }
+      
+    }
+    else if(bumpRecomnd == 4){
+      
+      if(!actionLock){
+        actionLock = true;
+        driveMotors.setM1Speed(100);
+        driveMotors.setM2Speed(-100);
+        actionTimer =  currentMillis;
+      }    
+                                     
     }
   // Make sure to reset flag
   }
   else{ // This branch is for normal operations
     
-    
+    if(!actionLock){
+    driveMotors.setM1Speed(-100);
+    driveMotors.setM2Speed(100);
+    }
   }
-    
   
-  // Different rate of sensor collection
-  // if (obstacle avoidance check){
-
-  // end
+   if((currentMillis - actionTimer) >= random(1250,2000) || currentFlag){     
+     actionLock = false;
+   }
+   
   // Perform requested camera movements
 //  Serial.println("Hello world!");  // prints hello with ending line break 
 
@@ -285,12 +416,12 @@ void loop() // run over and over again
 // This function is used by the Pololu motor drivers to handle errors in operation
 void stopIfFault()
 {
-  if (Drive_Motors.getM1Fault())
+  if (driveMotors.getM1Fault())
   {
     //Serial.println("M1 fault");
     while(1);
   }
-  if (Drive_Motors.getM2Fault())
+  if (driveMotors.getM2Fault())
   {
     //Serial.println("M2 fault");
     while(1);
@@ -300,17 +431,15 @@ void stopIfFault()
 // ---Left Bump Sensor Interrupt Function---
 void bumpLeft()
 {
-  bumpFlag = true
-  bumpRecomnd = 1;
+  bumpFlag = true;
+  bumpRecomnd = 2;
   
 }
 // ---Right Bump Sensor Interrupt Function---
 void bumpRight()
 {
-  bumpFlag = true
-  bumpRecomnd = 2;
-  
-  
+  bumpFlag = true;
+  bumpRecomnd = 3;
 }
 
 // ---Encoder Interrupt Functions go Here---

@@ -6,13 +6,13 @@ const int IR_Right_Pin = A1;
 const String leftString = "Left IR Reading: ";
 const String rightString = "Right IR Reading: ";
 
-const int IR_Period = 100; // ms
+const int IR_Period = 200; // ms
 
 int IR_Left[3] = {0, 0, 0};     // Stores the past 3 Left IR Readings for use in an average
 int IR_Right[3] = {0, 0, 0};    // Stores the past 3 Right IR Reading for use in an average
 int IR_Value;       // Temporary value to store mesured IR reading
-float IR_Left_Avg;  // Used to store left IR average reading
-float IR_Right_Avg; // Used to store right IR average reading
+int IR_Left_Avg;  // Used to store left IR average reading
+int IR_Right_Avg; // Used to store right IR average reading
 
 unsigned long currentMillis;
 unsigned long previousMillis_IR;
@@ -47,8 +47,8 @@ void loop() {
     IR_Left_Avg = (float(IR_Left[0])+float(IR_Left[1])+float(IR_Left[2]))/3;
     IR_Right_Avg = (float(IR_Right[0])+float(IR_Right[1])+float(IR_Right[2]))/3;
     
-    Serial.print(leftString + IR_Left_Avg + " " );
-    Serial.println(rightString + IR_Right_Avg);  
+    Serial.print(leftString + String(IR_Left_Avg) + " " );
+    Serial.println(rightString + String(IR_Right_Avg));  
 
     }
 
