@@ -1,4 +1,3 @@
-
 /* Patrick's Block Header
  *  
  *  
@@ -58,7 +57,7 @@ const int Current_Right_Pin = 9;   // A9, CS2
 
 // ---Sensor sampling periods---
 const unsigned long irPeriod = 100;      // Sampling period for IR Sensors (ms)
-const unsigned long currentPeriod = 100; // Sampling period for current sensor (ms)
+const unsigned long currentPeriod = 50; // Sampling period for current sensor (ms)
 
 // ---Constants---
 const int eps = 20;
@@ -93,7 +92,9 @@ unsigned long previousMillis_Bump=0;    // Stores the previous time the Bump sen
 // Arbiter Variables
 boolean actionLock = false;
 boolean actionOverride = false;
-boolean immediateAction = false;
+boolean sequentialAction = false;
+boolean forcedSense = false;
+char arbiterRecomnd[3] = {'n','n'};
 unsigned long timerLockout = 750;
 unsigned long actionTimer =0;
 
@@ -162,7 +163,7 @@ void loop() // run over and over again
   currentMillis = millis(); // Program run time in milliseconds. Used for sensor sampling.
 
   // Distance Measurement IR Smart Sensor
-  if (currentMillis - previousMillis_IR >= irPeriod){
+  if ((currentMillis - previousMillis_IR >= irPeriod) || forcedSense){
     previousMillis_IR = currentMillis;
     
     // Read in the left IR voltage and put into a buffer
@@ -204,13 +205,13 @@ void loop() // run over and over again
     }
     
     else if(irRightAvg > 200){
-      irRecomd = 5
-      immediateAction = true;    
+      irRecomnd = 5;
+      actionOverride = true;    
     }
     
     else if (irLeftAvg > 180){
-      irRecomnd = 6
-      immediateAction = true; 
+      irRecomnd = 6;
+      actionOverride = true; 
     }
     
     else{
@@ -235,8 +236,10 @@ void loop() // run over and over again
   }
 
   // Amperage Measurement Smart Sensor
-  if (currentMillis - previousMillis_Current >= currentPeriod){
+  if ((currentMillis - previousMillis_Current >= currentPeriod) || forcedSense){
     previousMillis_Current = currentMillis;
+
+    if(forcedSense) forcedSense = false; // reset forced sense flag
     
     currentValue  = driveMotors.getM1CurrentMilliamps();
     currentLeft[0] = currentLeft[1];
@@ -256,7 +259,6 @@ void loop() // run over and over again
     
       currentRecomnd = 7;  // Stop motion command
       actionOverride = true;
-      immediateAction = true; 
     }
     
     else{
@@ -281,23 +283,64 @@ void loop() // run over and over again
 
   if((currentMillis - actionTimer) >= random(750,1750) || actionOverride){     
      actionLock = false;
-     actionOverride = false;
   }
        
   // Driving will be done here
   // Any sensor flag will trigger alternative behavior
   if (currentFlag || bumpFlag || irFlag) {
-    if (irRecomnd == 1 && !actionOverride) {
-      // Left Turn
-      if(!actionLock){ // Left Turn
+    
+    if(currentRecomnd == 7){
+      // Stop Motion
+      arbiterRecomnd[0] = 's';
+      arbiterRecomnd[1] = 'n';
+      driveMotors.setM1Speed(0);
+      driveMotors.setM2Speed(0); 
+      actionOverride = false;
+      // Force IR and Current sensors to update next iteration
+      forcedSense = true;
+      // Reset bump sensor flags and recommendation
+      bumpFlag = false;
+      bumpRecomnd = 0;
+    }
+    
+    else if((irRecomnd == 5 || bumpRecomnd == 5) && sequentialAction){
+      // Reverse and Turn
+      arbiterRecomnd[0] = 'b';
+      arbiterRecomnd[1] = 'l';
+      if(!sequentialAction){
+        actionLock = true;
+        driveMotors.setM1Speed(75);
+        driveMotors.setM2Speed(-75);
+        actionTimer = currentMillis;
+      }
+      else{
         actionLock = true;
         driveMotors.setM1Speed(-75);
         driveMotors.setM2Speed(-75);
         actionTimer = currentMillis;
+        // Reset both flags after completion
+        bumpFlag = false;
+        irFlag = false;
+      }
+  
+    }
+    
+    else if(irRecomnd == 6 || bumpRecomnd == 6){
+      // Reverse and Turn Right
+      arbiterRecomnd[0] = 'b';
+      arbiterRecomnd[1] = 'r';   
+    }
+    
+    else if (irRecomnd == 1) {
+      // Left Turn
+      arbiterRecomnd[0] = 'l';
+      arbiterRecomnd[1] = 'n';
       } 
     }
     
-    else if(irRecomnd == 2 && !actionOverride){
+    else if(irRecomnd == 2){
+      arbiterRecomnd[0] = 'r';
+      arbiterRecomnd[1] = 'n';
       if(!actionLock){ // Right Turn
         actionLock = true;
         driveMotors.setM1Speed(75);
@@ -306,48 +349,48 @@ void loop() // run over and over again
       }
     }
     
-    else if(irRecomnd == 3 && !actionOverride){
+    else if(irRecomnd == 3){
       // Forward motion
+      arbiterRecomnd[0] = 'f';
+      arbiterRecomnd[1] = 'n';
       if(!actionLock){
-        actionLock = true
+        actionLock = true;
         driveMotors.setM1Speed(-75);
         driveMotors.setM2Speed(75);
         actionTimer = currentMillis;
       }
     }
     
-    else if(irRecomnd == 4 && !actionOverride){
+    else if(irRecomnd == 4){
       // Reverse motion
+      arbiterRecomnd[0] = 'b';
+      arbiterRecomnd[1] = 'n';
       if(!actionLock){
-        actionLock = true
+        actionLock = true;
         driveMotors.setM1Speed(75);
         driveMotors.setM2Speed(-75);
         actionTimer = currentMillis;
       }
     }
     
-    else if(currentRecomnd == 7){
-        actionLock = true
-        driveMotors.setM1Speed(0);
-        driveMotors.setM2Speed(0);
-        actionTimer = currentMillis  
-    }
-    
-    else if(irRecomnd == 5 || bumpRecomd == 5){
-  
-    }
-    
-    else if(irRecomnd == 6 || bumpRecomd == 6){
-  
-    }
+
   }
   
-  else{ // This branch is for normal operations
+  // This branch is for normal operations
+  else{ 
     // Forward motion
-    if(!actionLock){
-    driveMotors.setM1Speed(-75);
-    driveMotors.setM2Speed(75);
-    }
+    arbiterRecomnd[0] = 'f';
+    arbiterRecomnd[1] = 'n';
+  }
+
+  // Smart Motor Controller Here
+  if (arbiterRecomnd[0] != 'n'){
+    // Obstacle Avoidance Movements go here
+    
+    
+  }
+  else{
+    // Raspberry Pi 2 Movements go here
   }
   
 }
