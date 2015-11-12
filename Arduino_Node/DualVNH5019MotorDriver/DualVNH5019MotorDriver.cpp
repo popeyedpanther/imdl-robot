@@ -57,7 +57,8 @@ void DualVNH5019MotorDriver::init()
   pinMode(_PWM2,OUTPUT);
   pinMode(_EN2DIAG2,INPUT);
   pinMode(_CS2,INPUT);
-  #if defined(__AVR_ATmega168__)|| defined(__AVR_ATmega328P__) || defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega2560__)
+  
+  #if defined(__AVR_ATmega168__)|| defined(__AVR_ATmega328P__) || defined(__AVR_ATmega32U4__)
   // Timer 1 configuration
   // prescaler: clockI/O / 1
   // outputs enabled
@@ -66,30 +67,36 @@ void DualVNH5019MotorDriver::init()
   //
   // PWM frequency calculation
   // 16MHz / 1 (prescaler) / 2 (phase-correct) / 400 (top) = 20kHz
-  if (_Timer == 1)
-  {
+
 	TCCR1A = 0b10100000;
 	TCCR1B = 0b00010001;
 	ICR1 = 400;
-  }
-  else if (_Timer == 3)
-  {
-	TCCR3A = 0b10100000;
-	TCCR3B = 0b00010001;
-	ICR3 = 400;
-  }
-  else if (_Timer == 4)
-  {
-	TCCR4A = 0b10100000;
-	TCCR4B = 0b00010001;
-	ICR4 = 400;
-  }
-  else if (_Timer == 5)
-  {
-	TCCR5A = 0b10100000;
-	TCCR5B = 0b00010001;
-	ICR5 = 400;
-  }
+
+  #elif defined(__AVR_ATmega2560__)
+	if (_Timer == 1)
+	{
+		TCCR1A = 0b10100000;
+		TCCR1B = 0b00010001;
+		ICR1 = 400;
+	}
+	else if (_Timer == 3)
+	{
+		TCCR3A = 0b10100000;
+		TCCR3B = 0b00010001;
+		ICR3 = 400;
+	}
+	else if (_Timer == 4)
+	{
+		TCCR4A = 0b10100000;
+		TCCR4B = 0b00010001;
+		ICR4 = 400;
+	}
+	else if (_Timer == 5)
+	{
+		TCCR5A = 0b10100000;
+		TCCR5B = 0b00010001;
+		ICR5 = 400;
+	}
   #endif
 }
 // Set speed for motor 1, speed is a number betwenn -400 and 400
@@ -104,25 +111,28 @@ void DualVNH5019MotorDriver::setM1Speed(int speed)
   }
   if (speed > 400)  // Max PWM dutycycle
     speed = 400;
-  #if defined(__AVR_ATmega168__)|| defined(__AVR_ATmega328P__) || defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega2560__)
-  if (_Timer == 1)
-  {
+	
+  #if defined(__AVR_ATmega168__)|| defined(__AVR_ATmega328P__) || defined(__AVR_ATmega32U4__)
 	OCR1A = speed;
-  }
-  else if (_Timer == 3)
-  {
-	OCR3A = speed;
-  }
-  else if (_Timer == 4)
-  {
-	OCR4A = speed;
-  }
-  else if (_Timer == 5)
-  {
-	OCR5A = speed;
-  }
+  #elif defined(__AVR_ATmega2560__)
+	if (_Timer == 1)
+	{
+		OCR1A = speed;
+	}
+	else if (_Timer == 3)
+	{
+		OCR3A = speed;
+	}
+	else if (_Timer == 4)
+	{
+		OCR4A = speed;
+	}
+	else if (_Timer == 5)
+	{
+		OCR5A = speed;
+	}
   #else
-  analogWrite(_PWM1,speed * 51 / 80); // default to using analogWrite, mapping 400 to 255
+	analogWrite(_PWM1,speed * 51 / 80); // default to using analogWrite, mapping 400 to 255
   #endif
   if (speed == 0)
   {
@@ -153,25 +163,28 @@ void DualVNH5019MotorDriver::setM2Speed(int speed)
   }
   if (speed > 400)  // Max 
     speed = 400;
-  #if defined(__AVR_ATmega168__)|| defined(__AVR_ATmega328P__) || defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega2560__)
-    if (_Timer == 1)
-  {
+	
+  #if defined(__AVR_ATmega168__)|| defined(__AVR_ATmega328P__) || defined(__AVR_ATmega32U4__)
 	OCR1B = speed;
-  }
-  else if (_Timer == 3)
-  {
-	OCR3B = speed;
-  }
-  else if (_Timer == 4)
-  {
-	OCR4B = speed;
-  }
-  else if (_Timer == 5)
-  {
-	OCR5B = speed;
-  }
+  #elif defined(__AVR_ATmega2560__)
+    if (_Timer == 1)
+	{
+		OCR1B = speed;
+	}
+	else if (_Timer == 3)
+	{
+		OCR3B = speed;
+	}
+	else if (_Timer == 4)
+	{
+		OCR4B = speed;
+	}
+	else if (_Timer == 5)
+	{
+		OCR5B = speed;
+	}
   #else
-  analogWrite(_PWM2,speed * 51 / 80); // default to using analogWrite, mapping 400 to 255
+	analogWrite(_PWM2,speed * 51 / 80); // default to using analogWrite, mapping 400 to 255
   #endif 
   if (speed == 0)
   {
@@ -209,25 +222,27 @@ void DualVNH5019MotorDriver::setM1Brake(int brake)
     brake = 400;
   digitalWrite(_INA1, LOW);
   digitalWrite(_INB1, LOW);
-  #if defined(__AVR_ATmega168__)|| defined(__AVR_ATmega328P__) || defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega2560__)
-  if (_Timer == 1)
-  {
+  #if defined(__AVR_ATmega168__)|| defined(__AVR_ATmega328P__) || defined(__AVR_ATmega32U4__)
 	OCR1A = brake;
-  }
-  else if (_Timer == 3)
-  {
-	OCR3A = brake;
-  }
-  else if (_Timer == 4)
-  {
-	OCR4A = brake;
-  }
-  else if (_Timer == 5)
-  {
-	OCR5A = brake;
-  }
+  #elif defined(__AVR_ATmega2560__)
+	if (_Timer == 1)
+	{
+		OCR1A = brake;
+	}
+	else if (_Timer == 3)
+	{
+		OCR3A = brake;
+	}
+	else if (_Timer == 4)
+	{
+		OCR4A = brake;
+	}
+	else if (_Timer == 5)
+	{
+		OCR5A = brake;
+	}
   #else
-  analogWrite(_PWM1,brake * 51 / 80); // default to using analogWrite, mapping 400 to 255
+	analogWrite(_PWM1,brake * 51 / 80); // default to using analogWrite, mapping 400 to 255
   #endif
 }
 
@@ -243,25 +258,28 @@ void DualVNH5019MotorDriver::setM2Brake(int brake)
     brake = 400;
   digitalWrite(_INA2, LOW);
   digitalWrite(_INB2, LOW);
-  #if defined(__AVR_ATmega168__)|| defined(__AVR_ATmega328P__) || defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega2560__)
-    if (_Timer == 1)
-  {
+  
+  #if defined(__AVR_ATmega168__)|| defined(__AVR_ATmega328P__) || defined(__AVR_ATmega32U4__)
 	OCR1B = brake;
-  }
-  else if (_Timer == 3)
-  {
-	OCR3B = brake;
-  }
-  else if (_Timer == 4)
-  {
-	OCR4B = brake;
-  }
-  else if (_Timer == 5)
-  {
-	OCR5B = brake;
-  }
+  #elif defined(__AVR_ATmega2560__)
+    if (_Timer == 1)
+	{
+		OCR1B = brake;
+	}
+	else if (_Timer == 3)
+	{
+		OCR3B = brake;
+	}
+	else if (_Timer == 4)
+	{
+		OCR4B = brake;
+	}
+	else if (_Timer == 5)
+	{
+		OCR5B = brake;
+	}
   #else
-  analogWrite(_PWM2,brake * 51 / 80); // default to using analogWrite, mapping 400 to 255
+	analogWrite(_PWM2,brake * 51 / 80); // default to using analogWrite, mapping 400 to 255
   #endif
 }
 
