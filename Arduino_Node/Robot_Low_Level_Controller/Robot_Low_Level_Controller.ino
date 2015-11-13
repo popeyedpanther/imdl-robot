@@ -164,7 +164,7 @@ void setup()  // Needs to stay in setup until all necessary communications can b
 //  // Attach the servo objects to pins
 //  Tilt.attach(PWMTiltPin);
 //  Lower.attach(PWMLowerPin);
-//  Grasp.attach(PWMGraspPin);
+//  Grasp.attach(PWMGraspPin);  
 
   // Initialize drive motor object
   driveMotors.init();
@@ -179,7 +179,7 @@ void setup()  // Needs to stay in setup until all necessary communications can b
   // Attach 3 more for gearmotor encoders
   
   // Initiliaze serial communications
-  Serial.begin(9600);           // set up Serial library at 9600 bps  boolean readyBypass = true; 
+//  Serial.begin(9600);           // set up Serial library at 9600 bps  boolean readyBypass = true; 
 
 /*  
   while(1){
@@ -223,7 +223,7 @@ void loop() // run over and over again
 
   // Encoder counter will always run and cannot be blocked.
 
-  if(bumpRecomnd == 2){
+ /* if(bumpRecomnd == 2){
    Serial.println("bump Left"); 
     bumpRecomnd = 0;  
   }
@@ -231,7 +231,7 @@ void loop() // run over and over again
     Serial.println("Bump Right");
     bumpRecomnd = 0;
   }
-  
+ */ 
   currentMillis = millis(); // Program run time in milliseconds. Used for sensor sampling.
 
   // Distance Measurement IR Smart Sensor
@@ -333,7 +333,7 @@ void loop() // run over and over again
       currentFlag = false;
     }
     
-    
+    currentFlag = false;
     // This needs to set a flag for high current draw
     //Current_Pan  = Pan_Motor.getM1CurrentMilliamps();
 
@@ -351,16 +351,16 @@ void loop() // run over and over again
       if(random(0,9)/5 == 1){
         if(!actionLock){ // Right Turn
           actionLock = true;
-          driveMotors.setM1Speed(75);
-          driveMotors.setM2Speed(75);
+          driveMotors.setM1Speed(-75);
+          driveMotors.setM2Speed(-75);
           actionTimer = currentMillis;
         }
       }
       else{
         if(!actionLock){ // Left Turn
           actionLock = true;
-          driveMotors.setM1Speed(-75);
-          driveMotors.setM2Speed(-75);
+          driveMotors.setM1Speed(75);
+          driveMotors.setM2Speed(75);
           actionTimer = currentMillis;
         }
       }
@@ -377,16 +377,16 @@ void loop() // run over and over again
       if(random(0,9)/5 == 1){
         if(!actionLock){ // Right Turn
           actionLock = true;
-          driveMotors.setM1Speed(75);
-          driveMotors.setM2Speed(75);
+          driveMotors.setM1Speed(-75);
+          driveMotors.setM2Speed(-75);
           actionTimer = currentMillis;
         }
       }
       else{
         if(!actionLock){ // Left Turn
           actionLock = true;
-          driveMotors.setM1Speed(-75);
-          driveMotors.setM2Speed(-75);
+          driveMotors.setM1Speed(75);
+          driveMotors.setM2Speed(75);
           actionTimer = currentMillis;
         }
       }
@@ -395,8 +395,8 @@ void loop() // run over and over again
     else if((currentRecomnd == 2 || irRecomnd == 2) && !bumpFlag ){
       if(!actionLock){ // Right Turn
         actionLock = true;
-        driveMotors.setM1Speed(75);
-        driveMotors.setM2Speed(75);
+        driveMotors.setM1Speed(-75);
+        driveMotors.setM2Speed(-75);
         actionTimer = currentMillis;
       }
       
@@ -404,8 +404,8 @@ void loop() // run over and over again
     else if((currentRecomnd == 3 || irRecomnd == 3) && !bumpFlag){
       if(!actionLock){ // Left Turn
         actionLock = true;
-        driveMotors.setM1Speed(-75);
-        driveMotors.setM2Speed(-75);
+        driveMotors.setM1Speed(75);
+        driveMotors.setM2Speed(75);
         actionTimer = currentMillis;
       }
       
@@ -414,8 +414,8 @@ void loop() // run over and over again
       // Reverse motion
       if(!actionLock){
         actionLock = true;
-        driveMotors.setM1Speed(75);
-        driveMotors.setM2Speed(-75);
+        driveMotors.setM1Speed(-75);
+        driveMotors.setM2Speed(75);
         actionTimer =  currentMillis;
         bumpRecomnd = 0;
       }    
@@ -425,8 +425,8 @@ void loop() // run over and over again
   else{ // This branch is for normal operations
     // Forward motion
     if(!actionLock){
-    driveMotors.setM1Speed(-75);
-    driveMotors.setM2Speed(75);
+    driveMotors.setM1Speed(75);
+    driveMotors.setM2Speed(-75);
     }
   }
   
