@@ -8,9 +8,12 @@
 #include <Pixy.h>
 #include <SPI.h>
 //#include <PixySPI_SS.h>
-
+// Possibly include LCD library
 
 //----- Variable Declarations -----
+// Servomotor Pins
+const int panPWM = 9;
+const int tiltPWM = 10;
 
 // Binary true/false array to store if the object has been recovered yet.
 int blocksFound[2] = {0, 0}; // Zero is false
@@ -23,18 +26,21 @@ Servo Tilt;
 Pixy ffPixy; // Forward Facing Pixy
 
 void setup() {
-  // put your setup code here, to run once:
+  
   // Attach servo to specific pins
-  // Initialize Pixy object?\
+  Pan.attach(panPWM);
+  Tilt.attach(tiltPWM);
+  // Initialize Pixy object?
+  ffPixy.init();
   // Start serial and wait for the "Go" command
   Serial.begin(9600);
   // Stay in a loop until read to move on
-  while (1){
+  /*while (1){
   
 
-    
+  */  
   }
-
+  
 void loop() {
   // put your main code here, to run repeatedly:
   /* This code should be looking for colored blocks that meet certain color codes.

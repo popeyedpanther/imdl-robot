@@ -12,9 +12,8 @@
 
 //-------Include Libraries-----------------------------------
 #include <Servo.h>
-// Patrick's Custom Motor Controls ( Mostly for Drive motor control with hall effect encoder)
 #include <DualVNH5019MotorDriver.h> // For use with the Dual motor drivers from Pololu
-#include <LiquidCrystal.h> // For use a LCD display
+#include <LiquidCrystal.h> // For using a LCD display
 #include <Encoder.h>
 
 //-------Define variables here-------------------------------
