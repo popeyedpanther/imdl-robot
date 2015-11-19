@@ -15,7 +15,7 @@
 // Patrick's Custom Motor Controls ( Mostly for Drive motor control with hall effect encoder)
 #include <DualVNH5019MotorDriver.h> // For use with the Dual motor drivers from Pololu
 #include <LiquidCrystal.h> // For use a LCD display
-
+#include <Encoder.h>
 
 //-------Define variables here-------------------------------
 
@@ -43,23 +43,23 @@ const int Drive_EN2DIAG2=25; // Right Drive Motor
 // ---Sensor Pins---
 
 // Bump Sensors
-const int Bump_Left = 2;            // Digital Pin 2, interrupt pin for Mega 2560
-const int Bump_Right = 3;           // Digital Pin 3, interrupt pin for MEga 2560
+const int leftBumpPin = 2;            // Digital Pin 2, 0 interrupt pin for Mega 2560
+const int rightBumpPin = 3;           // Digital Pin 3, 1 interrupt pin for MEga 2560
+
+// Encoder Input
+const int leftEncoderAPin = 21;   // Digital Pin 21, 2 interrupt pin for Mega 2560
+const int leftEncoderBPin = 20;   // Digital Pin 20, 3 interrupt pin for Mega 2560
+
+const int rightEncoderAPin = 19;  // Digital Pin 19, 4 interrupt pin for Mega 2560
+const int rightEncoderBPin = 18;  // Digital Pin 18, 5 interrupt pin for Mega 2560
 
 // IR sensors
-const int IR_Left_Pin = 0;          // A0
-const int IR_Right_Pin = 1;         // A1
-
-// Encoder Input (!!Will be replaced with interrupt pins!!)
-const int Left_Encoder_1_Pin = 2;   // A2
-const int Left_Encoder_2_Pin = 3;   // A3
-
-const int Right_Encoder_1_Pin = 4;  // A4
-const int Right_Encoder_2_Pin = 5;  // A5
+const int leftIRPin = 0;          // A0
+const int rightIRPin = 1;         // A1
 
 // Current Sensors
-const int Current_Left_Pin = 8;    // A8, CS1
-const int Current_Right_Pin = 9;   // A9, CS2
+const int leftCurrentPin = 2;    // A8, CS1
+const int rightCurrentPin = 3;   // A9, CS2
 
 // Push button start
 //const int Push_button = A13; // For push to start button
@@ -67,6 +67,7 @@ const int Current_Right_Pin = 9;   // A9, CS2
 // ---Sensor sampling periods---
 const unsigned long irPeriod = 100;      // Sampling period for IR Sensors (ms)
 const unsigned long currentPeriod = 100; // Sampling period for current sensor (ms)
+const unsigned long encoderPeriod = 50;  // Sampling period for encodert sensor (ms)
 
 // ---Constants---
 const int eps = 20;
@@ -77,14 +78,14 @@ int inByte = 0;     // Variable that will store incoming byte from serial
 int irLeft[4] = {0, 0, 0, 0};     // Stores the past 3 Left IR Readings for use in an average
 int irRight[4] = {0, 0, 0, 0};    // Stores the past 3 Right IR Reading for use in an average
 int irValue;                   // Temporary value to store mesured IR reading
-int irLeftAvg;                 // Used to store left IR average reading
-int irRightAvg;                // Used to store right IR average reading
+float irLeftAvg;                 // Used to store left IR average reading
+float irRightAvg;                // Used to store right IR average reading
 
 int currentLeft[4] = {0, 0, 0, 0};   // Stores Left Drive Motor Current Reading
 int currentRight[4] = {0, 0, 0, 0};  // Stores Right Drive Motor Current Reading
 int currentValue;                 // For current measurement (amps)
-int currentLeftAvg;               // Used to store the average current sensor reading for the left motor            
-int currentRightAvg;              // Used to store the average current sensor reading for the right motor   
+float currentLeftAvg;               // Used to store the average current sensor reading for the left motor            
+float currentRightAvg;              // Used to store the average current sensor reading for the right motor   
 
 // Sensor Flags
 boolean irFlag =false;              // Will be set true if an IR condition is met
@@ -98,7 +99,7 @@ volatile boolean bumpFlag = false;  // Will be set true if a bump sensor is trig
 unsigned long currentMillis;            // Stores the current time reading in milliseconds
 unsigned long previousMillis_IR=0;      // Stores the previous time the IR sensors were read
 unsigned long previousMillis_Current=0; // Stores the previous time the Current sensors were read
-unsigned long previousMillis_Bump=0;    // Stores the previous time the Bump sensors were read
+unsigned long previousMillis_Encoder=0; // Stores the previous time the encoder were read
 
 // Arbiter Variables
 boolean actionLock = false;
@@ -106,26 +107,26 @@ boolean actionOverride = false;
 unsigned long timerLockout = 750;
 unsigned long actionTimer =0;
 
+// Encoder Counting Variables
+long leftOldPosition = -999;
+long rightOldPosition = -999;
+
+long leftNewPosition;
+long rightNewPosition;
+
+//----Define Objects-----
+// Define encoder object
+Encoder leftEncoder(leftEncoderAPin, leftEncoderBPin);
+Encoder rightEncoder(rightEncoderBPin, rightEncoderBPin);
+
 // Define servo objects
 Servo Lower;
 Servo Grasp;
 
 // Define drive motor object
 DualVNH5019MotorDriver driveMotors(Drive_INA1,Drive_INB1,PWMDrivePin_Left,\
-Drive_EN1DIAG1,Current_Left_Pin,Drive_INA2,Drive_INB2,PWMDrivePin_Right,Drive_EN2DIAG2,\
-Current_Right_Pin, 1);
-
-//Drive_Motors._INA1 = Drive_INA1;
-//Drive_Motors._INB1 = Drive_INB1;
-//Drive_Motors._PWM1 = PWMDrivePin_Left;
-//Drive_Motors._END1DIAG1 = Drive_END1DIAG1;
-//Drive_Motors._CS1 = Current_Left_Pin;
-//
-//Drive_Motors._INA2 = Drive_INA2;
-//Drive_Motors._INB2 = Drive_INB2;
-//Drive_Motors._PWM2 = PWMDrivePin_Right;
-//Drive_Motors._END2DIAG2 = Drive_END2DIAG2;
-//Drive_Motors._CS2 = Current_Right_Pin;
+Drive_EN1DIAG1,leftCurrentPin,Drive_INA2,Drive_INB2,PWMDrivePin_Right,Drive_EN2DIAG2,\
+rightCurrentPin, 1);
 
 // Test Variables
 const String leftString = "Left IR Reading: ";
@@ -143,18 +144,21 @@ void setup()  // Needs to stay in setup until all necessary communications can b
   // Initialize drive motor object
   driveMotors.init();
 
-  pinMode(Bump_Left,INPUT);
-  pinMode(Bump_Right,INPUT);
+  // Set interrupt pins to input
+  pinMode(leftBumpPin,INPUT);
+  pinMode(rightBumpPin,INPUT);
+
+  // Turn on pullup resistors
+  digitalWrite(leftBumpPin, HIGH);
+  digitalWrite(rightBumpPin, HIGH);
 
   // Attached Interrupt pins
-  attachInterrupt(0, bumpLeft, RISING);  // Digital Pin 2
-  attachInterrupt(1, bumpRight, RISING); // Digital Pin 3
-  // Attach 2 or 4 more for gearmotor encoders
+  attachInterrupt(0, bumpLeft, RISING);         // Digital Pin 2
+  attachInterrupt(1, bumpRight, RISING);        // Digital Pin 3
   
   // Initiliaze serial communications
-//  Serial.begin(9600);           // set up Serial library at 9600 bps  boolean readyBypass = true; 
+  Serial.begin(9600);           // set up Serial library at 9600 bps  boolean readyBypass = true; 
 
-/*  
   while(1){
     // Set readyBypass to true to skip waiting for Raspberry Pi 2 confirmation and button switch confimation
     if (readyBypass){
@@ -193,10 +197,6 @@ void loop() // run over and over again
   // Should always check IR and Bump sensors before performing requested tasks.
   // Camera positioning should not be overrid by obstacle avoidance behaviors
 
-
-  // Encoder counter will always run and cannot be blocked.
-
-
   currentMillis = millis(); // Program run time in milliseconds. Used for sensor sampling.
 
   //---- Distance Measurement IR Smart Sensor ----
@@ -204,14 +204,14 @@ void loop() // run over and over again
     previousMillis_IR = currentMillis;
     
     // Read in the left IR voltage and put into a buffer
-    irValue = analogRead(IR_Left_Pin);
+    irValue = analogRead(leftIRPin);
     irLeft[0] = irLeft[1];
     irLeft[1] = irLeft[2];
     irLeft[2] = irLeft[3];
     irLeft[3] = irValue;
     
     // Read in the right IR voltage and put into a buffer
-    irValue = analogRead(IR_Right_Pin);
+    irValue = analogRead(rightIRPin);
     irRight[0] = irRight[1];
     irRight[1] = irRight[2];
     irRight[2] = irRight[3];
@@ -221,16 +221,13 @@ void loop() // run over and over again
     irLeftAvg = (float(irLeft[0]) + float(irLeft[1]) + float(irLeft[2]) + float(irLeft[3]))/4;
     irRightAvg = (float(irRight[0]) + float(irRight[1]) + float(irRight[2]) + float(irRight[3]))/4;
 
-    // Convert to real units of measurement
+    // Convert voltage reading to units of inches.
+    irLeftAvg = 573.01 * pow(float(irLeftAvg),-0.909);
+    irRightAvg = 1768.2* pow(float(irRightAvg), -1.114);
 
-
-
-
-    
-    /* Debugging outputs
-      Serial.print(leftString + String(irLeftAvg) + " " );
-      Serial.println(rightString + String(irRightAvg));  
-    */
+    // Debugging outputs
+    //  Serial.print(leftString + String(irLeftAvg) + " " );
+    //  Serial.println(rightString + String(irRightAvg));  
     
   }
   //--------------------------------------------------------------------------------------------------------------
@@ -255,8 +252,10 @@ void loop() // run over and over again
     currentRightAvg = (float(currentRight[0]) + float(currentRight[1]) + float(currentRight[2]) + float(currentRight[3]))/4;
 
     // Convert to real units (amps)
+    currentLeftAvg = 0.034 * currentLeftAvg;
+    currentRightAvg = 0.034 * currentRightAvg;
     
-    if(currentLeftAvg >= 2000 || currentRightAvg >= 2000) {
+    if(currentLeftAvg >= 4 || currentRightAvg >= 4) {
     
       currentRecomnd = 6;  // Arbitraty number for now just to trigger the flag.
     }

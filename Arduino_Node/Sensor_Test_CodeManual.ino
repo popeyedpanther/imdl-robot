@@ -1,3 +1,4 @@
+
 /* Patrick's Block Header
  *  
  *  
@@ -8,9 +9,10 @@
  *  
  */
 
+
 //-------Include Libraries-----------------------------------
 #include <DualVNH5019MotorDriver.h> // For use with the Dual motor drivers from Pololu
-#include <Encoder.h>
+
 //-------Define variables here-------------------------------
 
 // ---PWM Pin Setting---
@@ -37,19 +39,19 @@ const int leftBumpPin = 2;            // Digital Pin 2, 0 interrupt pin for Mega
 const int rightBumpPin = 3;           // Digital Pin 3, 1 interrupt pin for MEga 2560
 
 // Encoder Input
-const int leftEncoderAPin = 21;   // Digital Pin 21, 2 interrupt pin for Mega 2560
-const int leftEncoderBPin = 20;   // Digital Pin 20, 3 interrupt pin for Mega 2560
+const int leftEncoderAPin = 2;   // Digital Pin 21, 2 interrupt pin for Mega 2560
+const int leftEncoderBPin = 3;   // Digital Pin 20, 3 interrupt pin for Mega 2560
 
-const int rightEncoderAPin = 19;  // Digital Pin 19, 4 interrupt pin for Mega 2560
-const int rightEncoderBPin = 18;  // Digital Pin 18, 5 interrupt pin for Mega 2560
+const int rightEncoderAPin = 4;  // Digital Pin 19, 4 interrupt pin for Mega 2560
+const int rightEncoderBPin = 5;  // Digital Pin 18, 5 interrupt pin for Mega 2560
 
 // IR sensors
 const int leftIRPin = 0;          // A0
 const int rightIRPin = 1;         // A1
 
 // Current Sensors
-const int leftCurrentPin = 2;    // A8, CS1
-const int rightCurrentPin = 3;   // A9, CS2
+const int leftCurrentPin = 8;    // A8, CS1
+const int rightCurrentPin = 9;   // A9, CS2
 
 // Push button start
 //const int Push_button = A13; // For push to start button
@@ -57,7 +59,6 @@ const int rightCurrentPin = 3;   // A9, CS2
 // ---Sensor sampling periods---
 const unsigned long irPeriod = 100;      // Sampling period for IR Sensors (ms)
 const unsigned long currentPeriod = 100; // Sampling period for current sensor (ms)
-const unsigned long encoderPeriod = 50;  // Sampling period for encodert sensor (ms)
 
 // ---Constants---
 const int eps = 20;
@@ -65,39 +66,43 @@ const int eps = 20;
 // ---Define non-constant variables---
 int inByte = 0;     // Variable that will store incoming byte from serial
 
-int irLeft[4] = {0, 0, 0, 0};     // Stores the past 3 Left IR Readings for use in an average
-int irRight[4] = {0, 0, 0, 0};    // Stores the past 3 Right IR Reading for use in an average
+int irLeft[3] = {0, 0, 0};     // Stores the past 3 Left IR Readings for use in an average
+int irRight[3] = {0, 0, 0};    // Stores the past 3 Right IR Reading for use in an average
 int irValue;                   // Temporary value to store mesured IR reading
-float irLeftAvg;                 // Used to store left IR average reading
-float irRightAvg;                // Used to store right IR average reading
+int irLeftAvg;                 // Used to store left IR average reading
+int irRightAvg;                // Used to store right IR average reading
 
 int currentLeft[3] = {0, 0, 0};   // Stores Left Drive Motor Current Reading
 int currentRight[3] = {0, 0, 0};  // Stores Right Drive Motor Current Reading
+int currentPan[3] = {0, 0, 0};    // Stores Pan Motor Current Reading
 int currentValue;                 // For current measurement (amps)
-float currentLeftAvg;               // Used to store the average current sensor reading for the left motor            
-float currentRightAvg;              // Used to store the average current sensor reading for the right motor   
+int currentLeftAvg;               // Used to store the average current sensor reading for the left motor            
+int currentRightAvg;              // Used to store the average current sensor reading for the right motor   
+int currentPanAvg;                // Used to store the average current sensor reading for the pan motor   
 
 // Used for sensor sampling times
 unsigned long currentMillis;            // Stores the current time reading in milliseconds
 unsigned long previousMillis_IR=0;      // Stores the previous time the IR sensors were read
 unsigned long previousMillis_Current=0; // Stores the previous time the Current sensors were read
-unsigned long previousMillis_Encoder=0; // Stores the previous time the encoder were read
+unsigned long previousMillis_Bump=0;    // Stores the previous time the Bump sensors were read
 
 // Encoder Counting Variables
-long leftOldPosition = -999;
-long rightOldPosition = -999;
+volatile unsigned int encoderLeftPos = 0; // A counter
+unsigned int lastReportedLeftPos = 1;     // Change managment
+static boolean leftRotating = false;      // Debounce managment
+volatile boolean leftA_set = false;
+volatile boolean leftB_set = false;
 
-long leftNewPosition;
-long rightNewPosition;
+volatile unsigned int encoderRightPos = 0; // A counter
+unsigned int lastReportedRightPos = 1;     // Change managment
+static boolean rightRotating = false;      // Debounce managment
+volatile boolean rightA_set = false;
+volatile boolean rightB_set = false;
 
 // Define drive motor object
 DualVNH5019MotorDriver driveMotors(Drive_INA1,Drive_INB1,PWMDrivePin_Left,\
 Drive_EN1DIAG1,leftCurrentPin,Drive_INA2,Drive_INB2,PWMDrivePin_Right,Drive_EN2DIAG2,\
 rightCurrentPin, 1);
-
-// Define encoder object
-Encoder leftEncoder(leftEncoderAPin, leftEncoderBPin);
-Encoder rightEncoder(rightEncoderBPin, rightEncoderBPin);
 
 // Test Variables
 const String leftString = "Left IR Reading: ";
@@ -112,21 +117,30 @@ void setup()  // Needs to stay in setup until all necessary communications can b
   // Initialize drive motor object
   driveMotors.init();
 
-  // Initialize the encoder objects
-  
-
   // Set interrupt pins to input
   pinMode(leftBumpPin,INPUT);
   pinMode(rightBumpPin,INPUT);
+  pinMode(leftEncoderAPin,INPUT);
+  pinMode(leftEncoderBPin,INPUT);
+  pinMode(rightEncoderAPin,INPUT);
+  pinMode(rightEncoderBPin,INPUT);
 
   // Turn on pullup resistors
   digitalWrite(leftBumpPin, HIGH);
   digitalWrite(rightBumpPin, HIGH);
+  digitalWrite(leftEncoderAPin, HIGH);
+  digitalWrite(leftEncoderBPin, HIGH);
+  digitalWrite(rightEncoderAPin, HIGH);
+  digitalWrite(rightEncoderBPin, HIGH);
 
   // Attached Interrupt pins
   attachInterrupt(0, bumpLeft, RISING);         // Digital Pin 2
   attachInterrupt(1, bumpRight, RISING);        // Digital Pin 3
-
+  attachInterrupt(2, doLeftEncoderA, CHANGE);   // Digital Pin 21
+  attachInterrupt(3, doLeftEncoderB, CHANGE);   // Digital Pin 20
+//  attachInterrupt(4, doRightEncoderA, CHANGE);  // Digital Pin 19
+//  attachInterrupt(5, doRightEncoderB, CHANGE);  // Digital Pin 18
+  
   // Initiliaze serial communications
   Serial.begin(9600);           // set up Serial library at 9600 bps  boolean readyBypass = true; 
 
@@ -144,6 +158,10 @@ void loop() // run over and over again
 
   // Encoder counter will always run and cannot be blocked.
 
+  // Reset the deboucer for each encoder
+  leftRotating = true;
+  rightRotating = true;
+  
   currentMillis = millis(); // Program run time in milliseconds. Used for sensor sampling.
 
   // Distance Measurement IR Smart Sensor
@@ -154,27 +172,21 @@ void loop() // run over and over again
     irValue = analogRead(leftIRPin);
     irLeft[0] = irLeft[1];
     irLeft[1] = irLeft[2];
-    irLeft[2] = irLeft[3];
-    irLeft[3] = irValue;
+    irLeft[2] = irValue;
     
     // Read in the right IR voltage and put into a buffer
     irValue = analogRead(rightIRPin);
     irRight[0] = irRight[1];
     irRight[1] = irRight[2];
-    irRight[2] = irRight[3];
-    irRight[3] = irValue;
+    irRight[2] = irValue;
     
     // Calculate the average input
-    irLeftAvg = (float(irLeft[0]) + float(irLeft[1]) + float(irLeft[2]) + float(irLeft[3]))/4;
-    irRightAvg = (float(irRight[0]) + float(irRight[1]) + float(irRight[2]) + float(irRight[3]))/4;
-
-    // Convert voltage reading to units of inches.
-    irLeftAvg = 573.01 * pow(float(irLeftAvg),-0.909);
-    irRightAvg = 1768.2* pow(float(irRightAvg), -1.114);
+    irLeftAvg = (float(irLeft[0])+float(irLeft[1])+float(irLeft[2]))/3;
+    irRightAvg = (float(irRight[0])+float(irRight[1])+float(irRight[2]))/3;
           
     // Debugging outputs
-    Serial.print(leftString + String(irLeftAvg) + " " );
-    Serial.println(rightString + String(irRightAvg));  
+      Serial.print(leftString + String(irLeftAvg) + " " );
+      Serial.println(rightString + String(irRightAvg));  
   
   }
 
@@ -203,22 +215,6 @@ void loop() // run over and over again
     */
   }
 
-  // Encoder sampling
-  if (currentMillis - previousMillis_Encoder >= encoderPeriod){
-    leftNewPosition = leftEncoder.read();
-    if (leftNewPosition != leftOldPosition) {
-      leftOldPosition = leftNewPosition;
-      //Serial.println("Left: " + String(leftNewPosition));
-    }
-
-    rightNewPosition = rightEncoder.read();
-    if (rightNewPosition != rightOldPosition) {
-      rightOldPosition = rightNewPosition;
-      //Serial.println("Right: " + String(rightNewPosition));
-    }
-  }
-
-
   // Supply Motor direction here to test encoders
   if(firsttime){ // This branch is for normal operations
     // Forward motion
@@ -226,6 +222,7 @@ void loop() // run over and over again
     driveMotors.setM2Speed(75);
     firsttime = false;
   }
+  
 }
 
 // ---Extra Error Function---
@@ -256,3 +253,35 @@ void bumpRight()
   Serial.println("Bump Right");
 }
 
+// ---Encoder Interrupt Functions go Here---
+// By rafbuff
+// http://playground.arduino.cc/Main/RotaryEncoders#Example14
+// Interrupt on A changing state
+void doLeftEncoderA(){
+  // debounce
+  if ( leftRotating ) delay (1);  // wait a little until the bouncing is done
+
+  // Test transition, did things really change? 
+  if( digitalRead(leftEncoderAPin) != leftA_set ) {  // debounce once more
+    leftA_set = !leftA_set;
+
+    // adjust counter + if A leads B
+    if ( leftA_set && !leftB_set ) 
+      leftEncoderPos += 1;
+
+    leftRotating = false;  // no more debouncing until loop() hits again
+  }
+}
+
+// Interrupt on B changing state, same as A above
+void doLeftEncoderB(){
+  if ( leftRotating ) delay (1);
+  if( digitalRead(leftEncoderBPin) != leftB_set ) {
+    leftB_set = !leftB_set;
+    //  adjust counter - 1 if B leads A
+    if( leftB_set && !leftA_set ) 
+      leftEncoderPos -= 1;
+
+    leftRotating = false;
+  }
+}
