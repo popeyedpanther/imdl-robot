@@ -257,10 +257,15 @@ void loop() // run over and over again
     // !! Reivisit this first if statement !!
     if (irLeftAvg > 180 || irRightAvg > 200){
       // reverse and turn left or right
-      bumpRecomnd = 4;
+      if(random(0,9)/5 == 1){
+        bumpRecomnd = 3;
+      }
+      else{
+        bumpRecomnd = 4;
+      }
       bumpFlag = true;
     }
-    else if((irRightAvg-irLeftAvg)<eps && (irLeftAvg <= 175 && irLeftAvg > 120)\
+    else if((irRightAvg-irLeftAvg)< eps && (irLeftAvg <= 175 && irLeftAvg > 120)\
           && (irRightAvg <= 190 && irRightAvg > 130)) {
     
       irRecomnd = 1;  // Turn left or right
@@ -305,19 +310,12 @@ void loop() // run over and over again
     currentRight[0] = currentRight[1];
     currentRight[1] = currentRight[2];
     currentRight[2] = currentValue;
-    
-    /*
-    currentValue = driveMotors.getM2CurrentMilliamps();
-    currentRight[0] = currentRight[1];
-    currentRight[1] = currentRight[2];
-    currentRight[2] = currentValue;
-    */
-    
+        
     // Calculate average current reading over three samples to try to not in spikes.
     currentLeftAvg = (float(currentLeft[0]) + float(currentLeft[1]) + float(currentLeft[2]))/3;
     currentRightAvg = (float(currentRight[0]) + float(currentRight[1]) + float(currentRight[2]))/3;
     
-    if(currentLeftAvg >= 1000 || currentRightAvg >= 1000) {
+    if(currentLeftAvg >= 1500 || currentRightAvg >= 1500) {
     
       currentRecomnd = 6;  // Arbitraty number for now just to trigger the flag.
     }
@@ -334,8 +332,6 @@ void loop() // run over and over again
     }
     
     currentFlag = false;
-    // This needs to set a flag for high current draw
-    //Current_Pan  = Pan_Motor.getM1CurrentMilliamps();
 
     /* Debugging Outputs
       Serial.print("Left Current: " + String(currentLeftAvg) + " " );
@@ -347,21 +343,23 @@ void loop() // run over and over again
   if((currentMillis - actionTimer) >= random(750,1750) || actionOverride){     
      actionLock = false;
 
-     if(bumpFlag && bumpRecomnd == 0){
-      if(random(0,9)/5 == 1){
+     if(bumpFlag && (bumpRecomnd == 1 || bumpRecomnd == 2)){
+      if(bumpRecomnd == 1){
         if(!actionLock){ // Right Turn
-          actionLock = true;
-          driveMotors.setM1Speed(-75);
-          driveMotors.setM2Speed(-75);
-          actionTimer = currentMillis;
-        }
-      }
-      else{
-        if(!actionLock){ // Left Turn
           actionLock = true;
           driveMotors.setM1Speed(75);
           driveMotors.setM2Speed(75);
           actionTimer = currentMillis;
+          bumpRecomnd = 0;
+        }
+      }
+      else if(bumpRecomnd == 2){
+        if(!actionLock){ // Left Turn
+          actionLock = true;
+          driveMotors.setM1Speed(-75);
+          driveMotors.setM2Speed(-75);
+          actionTimer = currentMillis;
+          bumpRecomnd = 0;
         }
       }
       bumpFlag = false;
@@ -372,37 +370,28 @@ void loop() // run over and over again
   // Driving will be done here
   // Any sensor flag will trigger alternative behavior
   if (currentFlag || bumpFlag || irFlag) {
-    if ((currentRecomnd == 1 || irRecomnd == 1) && !bumpFlag) {
+    if ((irRecomnd == 1) && !bumpFlag) {
     // Reverse and then turn left or right
       if(random(0,9)/5 == 1){
         if(!actionLock){ // Right Turn
-          actionLock = true;
-          driveMotors.setM1Speed(-75);
-          driveMotors.setM2Speed(-75);
-          actionTimer = currentMillis;
-        }
-      }
-      else{
-        if(!actionLock){ // Left Turn
           actionLock = true;
           driveMotors.setM1Speed(75);
           driveMotors.setM2Speed(75);
           actionTimer = currentMillis;
         }
       }
-      
-    }
-    else if((currentRecomnd == 2 || irRecomnd == 2) && !bumpFlag ){
-      if(!actionLock){ // Right Turn
-        actionLock = true;
-        driveMotors.setM1Speed(-75);
-        driveMotors.setM2Speed(-75);
-        actionTimer = currentMillis;
+      else{
+        if(!actionLock){ // Left Turn
+          actionLock = true;
+          driveMotors.setM1Speed(-75);
+          driveMotors.setM2Speed(-75);
+          actionTimer = currentMillis;
+        }
       }
       
     }
-    else if((currentRecomnd == 3 || irRecomnd == 3) && !bumpFlag){
-      if(!actionLock){ // Left Turn
+    else if((irRecomnd == 2) && !bumpFlag ){
+      if(!actionLock){ // Right Turn
         actionLock = true;
         driveMotors.setM1Speed(75);
         driveMotors.setM2Speed(75);
@@ -410,23 +399,42 @@ void loop() // run over and over again
       }
       
     }
-    else if(bumpRecomnd == 4){
+    else if((irRecomnd == 3) && !bumpFlag){
+      if(!actionLock){ // Left Turn
+        actionLock = true;
+        driveMotors.setM1Speed(-75);
+        driveMotors.setM2Speed(-75);
+        actionTimer = currentMillis;
+      }
+      
+    }
+    else if(bumpRecomnd == 3){
       // Reverse motion
       if(!actionLock){
         actionLock = true;
-        driveMotors.setM1Speed(-75);
-        driveMotors.setM2Speed(75);
+        driveMotors.setM1Speed(75);
+        driveMotors.setM2Speed(-75);
         actionTimer =  currentMillis;
-        bumpRecomnd = 0;
-      }    
+        bumpRecomnd = 1;
+      }
+      
+      else if(bumpRecomnd == 4){
+      // Reverse motion
+      if(!actionLock){
+        actionLock = true;
+        driveMotors.setM1Speed(75);
+        driveMotors.setM2Speed(-75);
+        actionTimer =  currentMillis;
+        bumpRecomnd = 2;
+      }        
                                      
     }
   }
   else{ // This branch is for normal operations
     // Forward motion
     if(!actionLock){
-    driveMotors.setM1Speed(75);
-    driveMotors.setM2Speed(-75);
+    driveMotors.setM1Speed(-75);
+    driveMotors.setM2Speed(75);
     }
   }
   
@@ -453,7 +461,7 @@ void bumpLeft()
 {
   bumpFlag = true;
   actionOverride = true;
-  bumpRecomnd = 4;
+  bumpRecomnd = 3;
   
 }
 // ---Right Bump Sensor Interrupt Function---

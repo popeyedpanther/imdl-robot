@@ -257,13 +257,13 @@ void loop() // run over and over again
     
     if(currentLeftAvg >= 4 || currentRightAvg >= 4) {
     
-      currentRecomnd = 6;  // Arbitraty number for now just to trigger the flag.
+      currentRecomnd = 1;  // Arbitraty number for now just to trigger the flag.
     }
     else{
       currentRecomnd = 0;
     }
      
-    // If the IR recommends something then set the flag to true
+    // If the current sensor recommends something then set the flag to true
     if(currentRecomnd != 0){
       currentFlag = true;
     }
@@ -272,7 +272,7 @@ void loop() // run over and over again
     }
 
     // Debug variable declaration
-    currentFlag = false;
+    //currentFlag = false;
 
     /* Debugging Outputs
       Serial.print("Left Current: " + String(currentLeftAvg) + " " );
@@ -292,7 +292,7 @@ void loop() // run over and over again
     // Stop motion, robot could be stuck.
       
     }
-    else if(bumpRecomnd == 4){
+    else if(bumpRecomnd == 3){
       // Reverse motion
       if(!actionLock){
         actionLock = true;
@@ -316,8 +316,8 @@ void loop() // run over and over again
   else{ // This branch is for normal operations
     // Forward motion
     if(!actionLock){
-    driveMotors.setM1Speed(75);
-    driveMotors.setM2Speed(-75);
+    driveMotors.setM1Speed(-75);
+    driveMotors.setM2Speed(75);
     }
   }
   
