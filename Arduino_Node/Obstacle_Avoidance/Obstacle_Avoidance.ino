@@ -417,7 +417,7 @@ void loop() // run over and over again
         actionTimer =  currentMillis;
         bumpRecomnd = 1;
       }
-      
+    }
       else if(bumpRecomnd == 4){
       // Reverse motion
       if(!actionLock){
