@@ -209,6 +209,7 @@ void loop() // run over and over again
     irLeft[1] = irLeft[2];
     irLeft[2] = irLeft[3];
     irLeft[3] = irValue;
+    delay(1);
     
     // Read in the right IR voltage and put into a buffer
     irValue = analogRead(rightIRPin);
@@ -216,6 +217,7 @@ void loop() // run over and over again
     irRight[1] = irRight[2];
     irRight[2] = irRight[3];
     irRight[3] = irValue;
+    delay(1);
     
     // Calculate the average input
     irLeftAvg = (float(irLeft[0]) + float(irLeft[1]) + float(irLeft[2]) + float(irLeft[3]))/4;
@@ -240,12 +242,14 @@ void loop() // run over and over again
     currentLeft[1] = currentLeft[2];
     currentLeft[2] = currentLeft[3];
     currentLeft[3] = currentValue;
+    delay(1);
         
     currentValue = driveMotors.getM2CurrentMilliamps();
     currentRight[0] = currentRight[1];
     currentRight[1] = currentRight[2];
     currentRight[2] = currentRight[3];
     currentRight[3] = currentValue;
+    delay(1);
        
     // Calculate average current reading over three samples to try to not in spikes.
     currentLeftAvg = (float(currentLeft[0]) + float(currentLeft[1]) + float(currentLeft[2]) + float(currentLeft[3]))/4;
