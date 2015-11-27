@@ -52,12 +52,12 @@ bool PID::Compute()
    if(timeChange>=SampleTime)
    {
       /*Compute all the working error variables*/
-	  double input = *myInput;
+	  double input = (*myInput - lastInput)/timeChange;
       double error = *mySetpoint - input;
       ITerm+= (ki * error);
       if(ITerm > outMax) ITerm= outMax;
       else if(ITerm < outMin) ITerm= outMin;
-      double dInput = (input - lastInput);
+      double dInput = (input - lastInputV);
  
       /*Compute PID Output*/
       double output = kp * error + ITerm- kd * dInput;
@@ -67,7 +67,8 @@ bool PID::Compute()
 	  *myOutput = output;
 	  
       /*Remember some variables for next time*/
-	  lastInput = input;
+      lastInput = *myInput;
+	  lastInputV = input;
       lastTime = now;
 	  return true;
    }
