@@ -5,7 +5,7 @@ from libpixyusb_swig.pixy import *	# Python wrapper for C++ Pixy CMUcam5 library
 from ctypes import *
 import serial						# Library for communicating over serial
 import numpy as np					# Matrix math library
-from time import clock, sleep				# Some standard library
+from time import clock, sleep		# Some standard library
 
 # Start serial connection with Arduino (These settings will most likely
 # need to be changed).
