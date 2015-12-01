@@ -89,10 +89,10 @@ void loop() {
 
   // Need to convert to actual position measurements.
   leftInput = leftEncoder.read()*C; 
-  leftPID.Compute();
+  leftDone = leftPID.Compute();
 
   rightInput = rightEncoder.read()*C;
-  rightPID.Compute();
+  rightDone = rightPID.Compute();
 
   // Missing a conversion for speed.
 

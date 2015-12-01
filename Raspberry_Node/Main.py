@@ -19,11 +19,17 @@ from time import clock, sleep				# Some standard library
 # Start serial connection with Arduino (These settings will most likely
 # need to be changed).
 
-"""
-ArdSerial = serial.Serial(
+
+megaSerial = serial.Serial(
 	port = '/dev/ttyACM0',
 	baudrate = 9600, 
 counter = 32
+
+unoSerial = serial.Serial(
+	port = '/dev/ttyACM1',
+	baudrate = 9600,
+counter = 32
+
 
 while True:
 	counter += 1
@@ -34,7 +40,7 @@ while True:
 		counter = 32
 	
 
-"""
+
 """
 # Test code for reading in Pixy information
 print ("Pixy Python SWIG Example -- Get Blocks")
