@@ -11,12 +11,20 @@
 // Possibly include LCD library
 
 //----- Variable Declarations -----
+// State Variable
+int State = 0;
+
 // Servomotor Pins
 const int panPWM = 9;
 const int tiltPWM = 10;
 
 // Binary true/false array to store if the object has been recovered yet.
 int blocksFound[2] = {0, 0}; // Zero is false
+
+// Serial Communications
+const int buffersize;
+int panCmd=90;
+int tiltCmd=90;
 
 // Define pan tilt servo objects
 Servo Pan;
@@ -30,12 +38,17 @@ void setup() {
   // Attach servo to specific pins
   Pan.attach(panPWM);
   Tilt.attach(tiltPWM);
+  // Align servo to default position
+  Pan.write(panCmd);
+  Tilt.write(tiltCmd);
+  
   // Initialize Pixy object?
- // ffPixy.init();
+  // ffPixy.init();
+  
   // Start serial and wait for the "Go" command
   Serial.begin(9600);
   Serial.flush();
-  digitalWrite(13,HIGH);
+  
   // Stay in a loop until read to move on
   /*while (1){
   
@@ -54,18 +67,30 @@ void loop() {
    */
    
     int i=0;
-    char commandbuffer[10];
+    char commandbuffer[buffersize];
    
     if (Serial.available()){
       delay(100);
-      while(Serial.available() && i<9){
+      while(Serial.available() && i< (buffersize-1)){
         commandbuffer[i++] = Serial.read();
       } 
       commandbuffer[i++] = '\n';    
     }
+
+    /* Need to parse the buffer here
+
+
+    */
     
-    if((commandbuffer[0]+commandbuffer[1]+commandbuffer[2])=='123'){
-      digitalWrite(13,LOW); 
+    if (newPanTiltCmd){
+      # Make sure to check inout bounds
+      if((panCmd >= 0 && panCmd <= 180) && panCmd != 999){
+        Pan.write(panCmd);  
+      }
+      if((tiltCmd >= 60 && tiltCmd <= 140) && tiltCmd != 999){
+        Tilt.write(panCmd);  
+      } 
+    newPanTiltCmd = false;
     }
     
     if(i>0){
