@@ -3,7 +3,7 @@
 from math import *					# Standard math library
 # from libpixyusb_swig.pixy import *	# Python wrapper for C++ Pixy CMUcam5 library
 # from ctypes import *
-# import serial						# Library for communicating over serial
+import serial						# Library for communicating over serial
 import numpy as np					# Matrix math library
 from time import clock, sleep		# Some standard library
 import sys
@@ -20,18 +20,14 @@ def convertStr(s):
         ret = -1
     return ret
 
-"""
+
 # Serial communcations for the Arduino Mega
-arduinoMega = serial.Serial(
-	port = '/dev/ttyACM0',
-	baudrate = 9600)
+arduinoMega = serial.Serial('/dev/ttyACM0', 9600)
 
 # Serial communcations for the Arduino Uno	
-arduinoUno = serial.Serial(
-	port = '/dev/ttyACM1',
-	baudrate = 9600,)
+arduinoUno = serial.Serial('/dev/ttyACM1', 9600)
 	
-"""
+
 Loop = True
 
 while Loop:
@@ -96,7 +92,9 @@ while Loop:
 				print "Input pan angle in degrees (some limits in place)"
 				pan = convertStr(raw_input())
 				if pan < 160 and pan > 50:
-					print pan
+					arduinoUno.write(str(pan))
+					sleep(0.1)
+					print arduinoUno.readline()
 				else:
 					print "Invalid Input"
 			elif choice == '2':
