@@ -15,7 +15,7 @@
 int State = 0;
 
 // Servomotor Pins
-const int panPWM = 9;
+const int panPWM = 6;
 const int tiltPWM = 10;
 
 // Binary true/false array to store if the object has been recovered yet.
@@ -77,26 +77,26 @@ void loop() {
       newPanTiltCmd = true;    
     } 
       
-      commandbuffer[i++] = '/0';    
+      //commandbuffer[i++] = '/0';    
     }
 
     /* Need to parse the buffer here
 
     
     */
-    //panCmd = atoi(commandbuffer);
+    panCmd = atoi(commandbuffer);
     
     if(i>0){
       Serial.println("Repeat Back " + String(panCmd));
     }
     
     if (newPanTiltCmd){
-      # Make sure to check inout bounds
+      // Make sure to check inout bounds
       if((panCmd >= 0 && panCmd <= 180) && panCmd != 999){
         Pan.write(panCmd);  
       }
       if((tiltCmd >= 60 && tiltCmd <= 140) && tiltCmd != 999){
-        Tilt.write(panCmd);  
+        Tilt.write(tiltCmd);  
       } 
     newPanTiltCmd = false;
     }

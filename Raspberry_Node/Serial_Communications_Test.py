@@ -91,7 +91,7 @@ while Loop:
 			if choice == '1':
 				print "Input pan angle in degrees (some limits in place)"
 				pan = convertStr(raw_input())
-				if pan < 160 and pan > 50:
+				if pan <= 170 and pan >=0:
 					arduinoUno.write(str(pan))
 					sleep(0.1)
 					print arduinoUno.readline()
