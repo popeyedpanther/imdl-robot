@@ -28,7 +28,7 @@ class Blocks (Structure):
 
 blocks = BlockArray(100)
 
-frame  = 0
+frame = 0
 
 previousClock = 0
 

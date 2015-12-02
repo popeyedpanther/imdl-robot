@@ -10,25 +10,19 @@
 
 # Import libraries to use
 from math import *					# Standard math library
-from libpixyusb_swig.pixy import *	# Python wrapper for C++ Pixy CMUcam5 library
-from ctypes import *
-import serial						# Library for communicating over serial
+# from libpixyusb_swig.pixy import *	# Python wrapper for C++ Pixy CMUcam5 library
+# from ctypes import *
+# import serial						# Library for communicating over serial
 import numpy as np					# Matrix math library
 from time import clock, sleep				# Some standard library
-
-# Start serial connection with Arduino (These settings will most likely
-# need to be changed).
+import Robot
 
 
-megaSerial = serial.Serial(
-	port = '/dev/ttyACM0',
-	baudrate = 9600, 
-counter = 32
+# Second import should be beacon locations.
+RobotObject = Robot("Bob", np.array([0, 0, 0]))
 
-unoSerial = serial.Serial(
-	port = '/dev/ttyACM1',
-	baudrate = 9600,
-counter = 32
+Robot.collectData()
+
 
 
 while True:
@@ -108,30 +102,5 @@ while True:
 		break
 
 while continousRun:
-	
-	currentTime = clock()
-	
-	if(currenTime-previousPixyTime)>= 0.04
-		previousPixyTime = clock()
-		count = pixy_get_blocks(100, blocks)
-		
-		if count > 0:
-			# Blocks found #
-			print 'frame %3d:' % (frame)
-			frame = frame + 1
-			for index in range (0, count):
-				print '[BLOCK_TYPE=%d SIG=%d X=%3d Y=%3d WIDTH=%3d HEIGHT=%3d]' % (blocks[index].type, blocks[index].signature, blocks[index].x, blocks[index].y, blocks[index].width, blocks[index].height)
-	
-	if blocks[index].signature == 1:
-		sfe		
-	else if blocks[index].signature == 2:
-		asdasd
-	
-	else if block[index].signature == 3;
-		adrfgrger
-		
-	else if block[index].signature == 7:
-		dgdgdrg
-	
-	if shutdownRobot:
-		continousRun = False
+
+
