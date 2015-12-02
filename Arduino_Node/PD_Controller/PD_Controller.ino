@@ -49,8 +49,10 @@ double rightSetpoint, rightInput, rightOutput;
 boolean leftDone = false, rightDone = false;
 
 // PID Tuning Paramters
-double lKp = 2, lKi = 0, lKd = 1;
-double rKp = 2, rKi = 0, rKd = 1;
+double lKp = 3, lKi = 0, lKd = 1.5;
+double rKp = 3, rKi = 0, rKd = 1.5;
+
+double K = 10;
 
 // Define drive motor object
 DualVNH5019MotorDriver driveMotors(Drive_INA1,Drive_INB1,PWMDrivePin_Left,\
@@ -60,6 +62,10 @@ rightCurrentPin, 1);
 // Define encoder object
 Encoder leftEncoder(leftEncoderAPin, leftEncoderBPin);
 Encoder rightEncoder(rightEncoderBPin, rightEncoderBPin);
+
+unsigned int timer = 0;
+
+boolean driveStop = false;
 
 /* Define PID object
  *  PID will take the velocity as an input. So the derivative will be calculated be calling the PID function
@@ -76,32 +82,67 @@ void setup() {
   /* Set PID output limits
    *  This limits correspond to the inputs in the VNH5019 Motor Driver setSpeed method.
    */
-  leftPID.SetOutputLimits(-100,100);
-  rightPID.SetOutputLimits(-100,100);
+  leftPID.SetSampleTime(50);
+  rightPID.SetSampleTime(50); 
+   
+  leftPID.SetOutputLimits(-10,10);
+  rightPID.SetOutputLimits(-10,10);
 
   leftPID.SetMode(AUTOMATIC);
   rightPID.SetMode(AUTOMATIC);
+  
+  rightPID.SetControllerDirection(REVERSE);
+  
+  Serial.begin(9600);
+  
+  leftSetpoint = 5;
+  rightSetpoint = 5;
+  
+
   
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
+  
+  unsigned int currentTime = millis();
+  
 
   // Need to convert to actual position measurements.
   leftInput = leftEncoder.read()*C; 
-  leftDone = leftPID.Compute();
-
+  if(!driveStop) {leftDone = leftPID.Compute();} 
+  
   rightInput = rightEncoder.read()*C;
-  rightDone = rightPID.Compute();
+  if(!driveStop){rightDone = rightPID.Compute();}
 
-  // Missing a conversion for speed.
-
-  if(leftDone && rightDone){
-  // Set the speeds together
-  driveMotors.setSpeeds(leftOutput, rightOutput);
-  leftDone = false;
-  rightDone = false;
+  /*
+  if(currentTime - timer > 2000){
+    Serial.print(leftInput);
+    Serial.print(' ');
+    Serial.println(rightInput);
+    
   }
+  */
+  // Missing a conversion for speed.
+  if (!(abs(leftInput) > (10-0.86)) && !(rightInput>(10-0.7))){
+    if((leftDone && rightDone)){
+      // Set the speeds together
+      driveMotors.setSpeeds(K*leftOutput, K*rightOutput);
+      leftDone = false;
+      rightDone = false;
+    }
+  }
+  else{
+
+    leftSetpoint = 0;
+    rightSetpoint = 0;
+    driveMotors.setSpeeds(0, 0);
+    driveStop = true;
+    Serial.print(leftInput);
+    Serial.print(' ');
+    Serial.println(rightInput);
+  }
+  
 }
 
 

@@ -195,6 +195,9 @@ void loop() // run over and over again
   // Obstacle avoidance behaviors should override and sent commands from the Raspberry Pi 2 until they have completed.
   // Should always check IR and Bump sensors before performing requested tasks.
   // Camera positioning should not be overrid by obstacle avoidance behaviors
+  
+  
+  /* Serial read
 
   currentMillis = millis(); // Program run time in milliseconds. Used for sensor sampling.
 
