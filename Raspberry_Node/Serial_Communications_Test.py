@@ -22,7 +22,7 @@ def convertStr(s):
 
 
 # Serial communcations for the Arduino Mega
-arduinoMega = serial.Serial('/dev/ttyACM0', 9600)
+arduinoMega = serial.Serial('/dev/ttyACM2', 9600)
 
 # Serial communcations for the Arduino Uno	
 arduinoUno = serial.Serial('/dev/ttyACM1', 9600)
@@ -66,15 +66,19 @@ while Loop:
 			if choice == '1':
 				print "Input wrist angle in degrees (some limits in place"
 				wrist = convertStr(raw_input())
-				if wrist < 160 and wrist > 50:
-					print wrist
+				if wrist < 175 and wrist > 30:
+					arduinoMega.write('9:99:99:'+ str(wrist)+':'+'999:'+'\r')
+					sleep(0.1)
+					print arduinoMega.readline()
 				else:
 					print "Invalid Input"
 			elif choice == '2':
-				print "Input claw angle in degrees (some limits in place"
-				claw = convertStr(raw_input())
-				if claw < 170 and claw > 30:
-					print claw
+				print "Input grasp angle in degrees (some limits in place"
+				grasp = convertStr(raw_input())
+				if grasp < 135 and grasp >= 45:
+					arduinoMega.write('9:99:99:999:'+ str(grasp)+':'+'\r')
+					sleep(0.1)
+					print arduinoMega.readline()
 				else:
 					print "Invalid Input"
 			elif choice == 'q' or choice == 'Q':
@@ -91,8 +95,8 @@ while Loop:
 			if choice == '1':
 				print "Input pan angle in degrees (some limits in place)"
 				pan = convertStr(raw_input())
-				if pan <= 170 and pan >=0:
-					arduinoUno.write(str(pan))
+				if pan <= 180 and pan >=0:
+					arduinoUno.write('9:'+ str(pan)+':'+'999:'+'\r')
 					sleep(0.1)
 					print arduinoUno.readline()
 				else:
@@ -100,8 +104,10 @@ while Loop:
 			elif choice == '2':
 				print "Input tilt angle in degrees (some limits in place)"
 				tilt = convertStr(raw_input())
-				if tilt < 170 and tilt > 30:
-					print tilt
+				if tilt < 130 and tilt > 80:
+					arduinoUno.write('9:'+ '999:' +str(tilt) +':' +'\r')
+					sleep(0.1)
+					print arduinoUno.readline()
 				else:
 					print "Invalid Input"
 			elif choice == 'q' or choice == 'Q':

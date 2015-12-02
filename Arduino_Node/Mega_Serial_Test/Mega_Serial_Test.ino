@@ -1,14 +1,23 @@
+
 #include <DualVNH5019MotorDriver.h> // For use with the Dual motor drivers from Pololu
 #include <Encoder.h>
 #include <PID_v1.h>
+#include <Servo.h>
+#include <Messenger.h>
 
 //-------Define variables here-------------------------------
+// Behavior Variable
+int activeBehavior = 0;
 
 // ---PWM Pin Setting---
 
 // PWM pins for the two drive motors
 const int PWMDrivePin_Left = 11;    // Timer 1 16-bit
 const int PWMDrivePin_Right = 12;   // Timer 1 16-bit
+
+// Additional PWM Pins for Manipulator. May not be used
+const int PWMWristPin = 7;
+const int PWMGraspPin = 6;
 
 // ---Pololu Motor Pins---
 const int Drive_INA1=22;     // Left Drive Motor
@@ -45,6 +54,8 @@ double C = (3.54*3.14159)/4741.41;
 // PID input variables
 double leftSetpoint, leftInput, leftOutput;
 double rightSetpoint, rightInput, rightOutput;
+int leftSetpointValue, rightSetpointValue; // Intermediate before the setpoints are actually changed
+
 
 boolean leftDone = false, rightDone = false;
 
@@ -54,6 +65,14 @@ double rKp = 3, rKi = 0, rKd = 1.5;
 
 double K = 10;
 
+// Serial Communications stuff
+int temp;
+boolean newWristGraspCmd = false;
+boolean newMotorSetpoint = false;
+Messenger piMessage = Messenger(':');
+int wristCmd = 120;
+int graspCmd = 120;
+
 // Define drive motor object
 DualVNH5019MotorDriver driveMotors(Drive_INA1,Drive_INB1,PWMDrivePin_Left,\
 Drive_EN1DIAG1,leftCurrentPin,Drive_INA2,Drive_INB2,PWMDrivePin_Right,Drive_EN2DIAG2,\
@@ -62,6 +81,10 @@ rightCurrentPin, 1);
 // Define encoder object
 Encoder leftEncoder(leftEncoderAPin, leftEncoderBPin);
 Encoder rightEncoder(rightEncoderBPin, rightEncoderBPin);
+
+// Define servo objects
+Servo Wrist;
+Servo Grasp;
 
 unsigned int timer = 0;
 
@@ -73,11 +96,44 @@ boolean driveStop = false;
 PID leftPID(&leftInput, &leftOutput, &leftSetpoint, lKp, lKi, lKd, DIRECT);
 PID rightPID(&rightInput, &rightOutput, &rightSetpoint, rKp, rKi, rKd, DIRECT);
 
+void messageParse(){
+  // This will set the variables that need to be changed
+  // from the message
+  if (piMessage.available()){
+    temp = piMessage.readInt();
+    if (temp != 9){ activeBehavior = temp;}
+    temp = piMessage.readChar();
+    if (temp != 99){ 
+      leftSetpointValue = temp;
+      //newMotorSetpoint = true;
+    }
+    temp = piMessage.readInt();
+    if (temp != 99){ 
+      rightSetpointValue = temp;
+      //newMotorSetpoint = true;
+    }
+    temp = piMessage.readInt(); 
+    if (temp != 999){ 
+      wristCmd = temp;
+      newWristGraspCmd = true;
+    }
+    temp = piMessage.readInt();
+    if (temp != 999){ 
+      graspCmd = temp;
+      newWristGraspCmd = true;
+    }    
+  }  
+}
+
 void setup() {
   // put your setup code here, to run once:
   
   // Initialize drive motor object
   driveMotors.init();
+  
+  Wrist.attach(PWMWristPin);
+  Grasp.attach(PWMGraspPin);  
+
 
   /* Set PID output limits
    *  This limits correspond to the inputs in the VNH5019 Motor Driver setSpeed method.
@@ -94,9 +150,10 @@ void setup() {
   rightPID.SetControllerDirection(REVERSE);
   
   Serial.begin(9600);
+  piMessage.attach(messageParse);
   
-  leftSetpoint = 5;
-  rightSetpoint = 5;
+  leftSetpoint = 0;
+  rightSetpoint = 0;
   
 
   
@@ -105,8 +162,37 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
   
+  while( Serial.available() ) piMessage.process(Serial.read());
+  
   unsigned int currentTime = millis();
   
+  if (newWristGraspCmd){
+    Serial.println("Repeat Back " + String(activeBehavior)+ " " + String(wristCmd) + " " + String(graspCmd));  
+    // Make sure to check inout bounds
+    if((wristCmd >= 40 && wristCmd <= 170) && wristCmd != 999){
+      Wrist.write(wristCmd);
+      //Serial.println("Repeat Back " + String(panCmd));  
+    }
+    if((graspCmd >= 45 && graspCmd <= 135) && graspCmd != 999){
+      Grasp.write(graspCmd);
+      //Serial.println("Repeat Back " + String(State)+ " " + String(panCmd) +" " String(tiltCmd));  
+    } 
+    newWristGraspCmd = false;
+  }  
+  
+  if (newMotorSetpoint){
+    Serial.println("Repeat Back " + String(activeBehavior)+ " " + String(wristCmd) + " " + String(graspCmd));  
+    // Make sure to check inout bounds
+    if((wristCmd >= 40 && wristCmd <= 170) && wristCmd != 999){
+      Wrist.write(wristCmd);
+      //Serial.println("Repeat Back " + String(panCmd));  
+    }
+    if((graspCmd >= 45 && graspCmd <= 135) && graspCmd != 999){
+      Grasp.write(graspCmd);
+      //Serial.println("Repeat Back " + String(State)+ " " + String(panCmd) +" " String(tiltCmd));  
+    } 
+    newWristGraspCmd = false;
+  }  
 
   // Need to convert to actual position measurements.
   leftInput = leftEncoder.read()*C; 
