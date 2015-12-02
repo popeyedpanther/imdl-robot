@@ -19,12 +19,12 @@ const int panPWM = 9;
 const int tiltPWM = 10;
 
 // Binary true/false array to store if the object has been recovered yet.
-int blocksFound[2] = {0, 0}; // Zero is false
-
+int blocksFound[2] = {0, 0}; // Zero is false 
 // Serial Communications
-const int buffersize;
+const int buffersize = 4;
 int panCmd=90;
 int tiltCmd=90;
+boolean newPanTiltCmd = false;
 
 // Define pan tilt servo objects
 Servo Pan;
@@ -72,15 +72,23 @@ void loop() {
     if (Serial.available()){
       delay(100);
       while(Serial.available() && i< (buffersize-1)){
-        commandbuffer[i++] = Serial.read();
-      } 
-      commandbuffer[i++] = '\n';    
+        commandbuffer[i++] = Serial.read();  
+      
+      newPanTiltCmd = true;    
+    } 
+      
+      commandbuffer[i++] = '/0';    
     }
 
     /* Need to parse the buffer here
 
-
+    
     */
+    //panCmd = atoi(commandbuffer);
+    
+    if(i>0){
+      Serial.println("Repeat Back " + String(panCmd));
+    }
     
     if (newPanTiltCmd){
       # Make sure to check inout bounds
@@ -93,7 +101,5 @@ void loop() {
     newPanTiltCmd = false;
     }
     
-    if(i>0){
-      Serial.println("Repeat Back " + String(commandbuffer));
-    }
+
 }
