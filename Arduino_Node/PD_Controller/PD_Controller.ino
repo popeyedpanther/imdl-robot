@@ -49,8 +49,8 @@ double rightSetpoint, rightInput, rightOutput;
 boolean leftDone = false, rightDone = false;
 
 // PID Tuning Paramters
-double lKp = 3, lKi = 0, lKd = 1.5;
-double rKp = 3, rKi = 0, rKd = 1.5;
+double lKp = 3, lKi = 0, lKd = 3;
+double rKp = 3, rKi = 0, rKd = 3;
 
 double K = 10;
 
@@ -72,6 +72,14 @@ boolean driveStop = false;
  */
 PID leftPID(&leftInput, &leftOutput, &leftSetpoint, lKp, lKi, lKd, DIRECT);
 PID rightPID(&rightInput, &rightOutput, &rightSetpoint, rKp, rKi, rKd, DIRECT);
+
+
+// Random test variables
+unsigned int changespeedsTimer = 0;
+unsigned int changeSpeeds = 10000;
+boolean stopped = false;
+
+
 
 void setup() {
   // put your setup code here, to run once:
@@ -106,6 +114,19 @@ void loop() {
   // put your main code here, to run repeatedly:
   
   unsigned int currentTime = millis();
+
+  if((currentTime - changespeedsTimer) > changeSpeeds){
+    changespeedsTimer = currentTime;
+    leftSetpoint = 0;
+    rightSetpoint = 0;
+
+    if(stopped){
+          leftSetpoint = -5;
+          rightSetpoint = 5;
+    }
+    
+    stopped = true;  
+  }
   
 
   // Need to convert to actual position measurements.
@@ -123,6 +144,16 @@ void loop() {
     
   }
   */
+
+    if((leftDone && rightDone)){
+      // Set the speeds together
+      driveMotors.setSpeeds(K*leftOutput, K*rightOutput);
+      leftDone = false;
+      rightDone = false;
+    }
+  
+
+  /*
   // Missing a conversion for speed.
   if (!(abs(leftInput) > (10-0.86)) && !(rightInput>(10-0.7))){
     if((leftDone && rightDone)){
@@ -132,6 +163,8 @@ void loop() {
       rightDone = false;
     }
   }
+
+  /*
   else{
 
     leftSetpoint = 0;
@@ -142,7 +175,7 @@ void loop() {
     Serial.print(' ');
     Serial.println(rightInput);
   }
-  
+  */
 }
 
 

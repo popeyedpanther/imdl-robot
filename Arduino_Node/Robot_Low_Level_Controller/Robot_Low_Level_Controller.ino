@@ -73,7 +73,7 @@ const unsigned long currentPeriod = 100; // Sampling period for current sensor (
 const unsigned long encoderPeriod = 50;  // Sampling period for encodert sensor (ms)
 
 // ---Constants---
-const int eps = 20;
+const int eps = 0.5;
 
 // Encoder Conversion Constant
 const double C = (3.54*3.14159)/4741.41;
