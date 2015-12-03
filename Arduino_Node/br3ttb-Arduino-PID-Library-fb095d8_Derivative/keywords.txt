@@ -7,6 +7,7 @@
 #######################################
 
 PID_v1	KEYWORD1
+PID	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)

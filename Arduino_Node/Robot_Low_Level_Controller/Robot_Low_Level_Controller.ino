@@ -15,8 +15,12 @@
 #include <DualVNH5019MotorDriver.h> // For use with the Dual motor drivers from Pololu
 #include <LiquidCrystal.h> // For using a LCD display
 #include <Encoder.h>
+#include <PID_v1.h>
+#include <Messenger.h>
 
 //-------Define variables here-------------------------------
+// Behavior Variable
+int activeBehavior = 0;
 
 // ---PWM Pin Setting---
 
@@ -25,7 +29,7 @@ const int PWMDrivePin_Left = 11;    // Timer 1 16-bit
 const int PWMDrivePin_Right = 12;   // Timer 1 16-bit
 
 // Additional PWM Pins for Manipulator. May not be used
-const int PWMLowerPin = 7;
+const int PWMWristPin = 7;
 const int PWMGraspPin = 6;
 
 // ---LED Pins---
@@ -71,6 +75,9 @@ const unsigned long encoderPeriod = 50;  // Sampling period for encodert sensor 
 // ---Constants---
 const int eps = 20;
 
+// Encoder Conversion Constant
+const double C = (3.54*3.14159)/4741.41;
+
 // ---Define non-constant variables---
 int inByte = 0;     // Variable that will store incoming byte from serial
 
@@ -85,6 +92,33 @@ int currentRight[4] = {0, 0, 0, 0};  // Stores Right Drive Motor Current Reading
 int currentValue;                 // For current measurement (amps)
 float currentLeftAvg;               // Used to store the average current sensor reading for the left motor            
 float currentRightAvg;              // Used to store the average current sensor reading for the right motor   
+
+// Encoder Counting Variables
+long leftOldPosition;
+long rightOldPosition;
+long leftNewPosition = 0;
+long rightNewPosition = 0;
+
+// PID input variables
+double leftSetpoint, leftInput, leftOutput;
+double rightSetpoint, rightInput, rightOutput;
+int leftSetpointValue, rightSetpointValue; // Intermediate before the setpoints are actually changed
+boolean leftDone = false, rightDone = false;
+
+// PID Tuning Paramters
+double lKp = 3, lKi = 0, lKd = 1.5;
+double rKp = 3, rKi = 0, rKd = 1.5;
+
+double K = 10;
+
+// Serial Communications stuff
+int temp;
+boolean newWristGraspCmd = false;
+boolean newMotorSetpoint = false;
+Messenger piMessage = Messenger(':');
+int wristCmd = 120;
+int graspCmd = 120;
+
 
 // Sensor Flags
 boolean irFlag =false;              // Will be set true if an IR condition is met
@@ -106,30 +140,61 @@ boolean actionOverride = false;
 unsigned long timerLockout = 750;
 unsigned long actionTimer =0;
 
-// Encoder Counting Variables
-long leftOldPosition = -999;
-long rightOldPosition = -999;
-
-long leftNewPosition;
-long rightNewPosition;
-
 //----Define Objects-----
-// Define encoder object
-Encoder leftEncoder(leftEncoderAPin, leftEncoderBPin);
-Encoder rightEncoder(rightEncoderBPin, rightEncoderBPin);
-
-// Define servo objects
-Servo Lower;
-Servo Grasp;
 
 // Define drive motor object
 DualVNH5019MotorDriver driveMotors(Drive_INA1,Drive_INB1,PWMDrivePin_Left,\
 Drive_EN1DIAG1,leftCurrentPin,Drive_INA2,Drive_INB2,PWMDrivePin_Right,Drive_EN2DIAG2,\
 rightCurrentPin, 1);
 
+// Define encoder object
+Encoder leftEncoder(leftEncoderAPin, leftEncoderBPin);
+Encoder rightEncoder(rightEncoderBPin, rightEncoderBPin);
+
+/* Define PID object
+ *  PID will take the velocity as an input. So the derivative will be calculated be calling the PID function
+ */
+PID leftPID(&leftInput, &leftOutput, &leftSetpoint, lKp, lKi, lKd, DIRECT);
+PID rightPID(&rightInput, &rightOutput, &rightSetpoint, rKp, rKi, rKd, DIRECT);
+
+// Define servo objects
+Servo Wrist;
+Servo Grasp;
+
 // Test Variables
 const String leftString = "Left IR Reading: ";
 const String rightString = "Right IR Reading: ";
+unsigned int timer = 0;
+
+boolean driveStop = false;
+
+//------- Message parsing function -------------------------
+
+void messageParse(){
+  // This will set the variables that need to be changed
+  // from the message
+  if (piMessage.available()){
+    temp = piMessage.readInt();
+    if (temp != 9){ activeBehavior = temp;}
+    temp = piMessage.readChar();
+    if (temp != 99){ 
+      leftSetpointValue = temp;
+      //newMotorSetpoint = true;
+    }
+    temp = piMessage.readInt();
+    if (temp != 99){ 
+      rightSetpointValue = temp;
+      //newMotorSetpoint = true;
+    }
+    wristCmd = piMessage.readInt();
+    graspCmd = piMessage.readInt();  
+    
+    if (wristCmd != 999 || graspCmd != 999){ 
+      newWristGraspCmd = true;
+    }
+  }  
+}
+
  
 //-------Setup Function-----------------------------------
 
@@ -137,12 +202,13 @@ void setup()  // Needs to stay in setup until all necessary communications can b
 {
   
   // Attach the servo objects to pins
-  Lower.attach(PWMLowerPin);
+  Wrist.attach(PWMWristPin);
   Grasp.attach(PWMGraspPin);  
 
   // Initialize drive motor object
   driveMotors.init();
 
+  //---- Bump Switches----
   // Set interrupt pins to input
   pinMode(leftBumpPin,INPUT);
   pinMode(rightBumpPin,INPUT);
@@ -154,10 +220,25 @@ void setup()  // Needs to stay in setup until all necessary communications can b
   // Attached Interrupt pins
   attachInterrupt(0, bumpLeft, RISING);         // Digital Pin 2
   attachInterrupt(1, bumpRight, RISING);        // Digital Pin 3
+
+  //---- PID Settings ----
+  leftPID.SetSampleTime(50);
+  rightPID.SetSampleTime(50); 
+   
+  leftPID.SetOutputLimits(-10,10);
+  rightPID.SetOutputLimits(-10,10);
+
+  leftPID.SetMode(AUTOMATIC);
+  rightPID.SetMode(AUTOMATIC);
+  
+  rightPID.SetControllerDirection(REVERSE);
+  
   
   // Initiliaze serial communications
-  Serial.begin(9600);           // set up Serial library at 9600 bps  boolean readyBypass = true; 
+  Serial.begin(9600);           // set up Serial library at 9600 bps  boolean readyBypass = true;
+  piMessage.attach(messageParse); 
 
+  /*
   while(1){
     // Set readyBypass to true to skip waiting for Raspberry Pi 2 confirmation and button switch confimation
     if (readyBypass){
@@ -177,10 +258,11 @@ void setup()  // Needs to stay in setup until all necessary communications can b
     }
 
   }
-    
+   
   }
 
-*/
+  */
+  
   /* Should Send confirmation to Raspberry Pi 2 if all services running
    *  and then wait for a message from the Odroid to continue to the Main Loop
    */
@@ -195,9 +277,20 @@ void loop() // run over and over again
   // Obstacle avoidance behaviors should override and sent commands from the Raspberry Pi 2 until they have completed.
   // Should always check IR and Bump sensors before performing requested tasks.
   // Camera positioning should not be overrid by obstacle avoidance behaviors
-  
-  
-  /* Serial read
+
+  // Read serial and call parser
+  while( Serial.available() ) piMessage.process(Serial.read());
+
+  if (newWristGraspCmd){
+    // Makes sure desired angles are acceptable
+    if((wristCmd >= 40 && wristCmd <= 170) && wristCmd != 999){
+      Wrist.write(wristCmd);
+    }
+    if((graspCmd >= 45 && graspCmd <= 135) && graspCmd != 999){
+      Grasp.write(graspCmd);
+    } 
+    newWristGraspCmd = false;
+  }  
 
   currentMillis = millis(); // Program run time in milliseconds. Used for sensor sampling.
 
@@ -306,7 +399,8 @@ void loop() // run over and over again
         driveMotors.setM2Speed(75);
         actionTimer =  currentMillis;
         bumpRecomnd = 0;
-      } 
+      }
+    } 
     else if(bumpRecomnd == 4){
       // Reverse motion
       if(!actionLock){
@@ -315,8 +409,7 @@ void loop() // run over and over again
         driveMotors.setM2Speed(75);
         actionTimer =  currentMillis;
         bumpRecomnd = 0;
-      }      
-                                     
+      }                                      
     }
   }
   else{ // This branch is for normal operations
@@ -326,7 +419,6 @@ void loop() // run over and over again
     driveMotors.setM2Speed(75);
     }
   }
-  
 }
 
 //--------------------------------------------------------------------------------------------------------------

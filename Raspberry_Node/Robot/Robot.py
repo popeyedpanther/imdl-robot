@@ -23,25 +23,40 @@ class Robot:
 
         self.beaconPos = beacons
 
+
     def stateUpdate(self):
         self.arduinoMega.write()
-        self.arduinoMega.read()
+        message = self.readMega()
 
-        # Parse data and then apply statechange.
+        statechange = np.array([float(message[0]), float(message[1]), float(message[2])])
 
         self.state += statechange
 
     def move(self, Dir, Amount):
 
         if Dir == 'L' or Dir == 'l':
-            # Calculate the kinematics here and pass the setpoints to the arduino
+            self.arduinoMega.write("9:2:" + str(Amount) + ":" + "999:999:9")
         elif Dir == 'R' or Dir == 'r':
-
+            self.arduinoMega.write("9:3:" + str(Amount) + ":" + "999:999:9")
         elif Dir == 'F' or Dir == 'f':
-
+            self.arduinoMega.write("9:0:" + str(Amount) + ":" + "999:999:9")
         elif Dir == 'B' or Dir == 'b':
-            self.arduinoMega.write()
+            self.arduinoMega.write("9:1:" + str(Amount) + ":" + "999:999:9")
 
+    def readMega(self):
+        # This method will read the output of the Arduino Mega and parse the information
+        # returns a list of the separate components of the message as strings
+        megaMessage = self.arduinoMega.readline()
+        messageListMega = megaMessage.split(":")
+        return messageListMega
+
+    def readUno(self):
+        # This method will read the output of the Arduino Uno and parse the information
+        # returns a list of the separate components of the message as strings
+        unoMessage = self.arduinoUno.readline()
+        messageListUno = unoMessage.split(":")
+        return messageListUno
+"""
     def collectdata(self):
         # This needs to collect data from three out of four beacons.
         # These beacons should have a identifier so their specific absolute position is know.
@@ -147,3 +162,4 @@ class Robot:
             thetaR -= 2*pi
 
         return np.array([xR, yR, thetaR])
+"""
