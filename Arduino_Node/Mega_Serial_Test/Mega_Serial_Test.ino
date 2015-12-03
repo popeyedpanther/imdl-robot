@@ -54,7 +54,7 @@ double C = (3.54*3.14159)/4741.41;
 // PID input variables
 double leftSetpoint, leftInput, leftOutput;
 double rightSetpoint, rightInput, rightOutput;
-int leftSetpointValue, rightSetpointValue; // Intermediate before the setpoints are actually changed
+int leftDistance, rightDistance; // Intermediate before the setpoints are actually changed
 
 
 boolean leftDone = false, rightDone = false;
@@ -68,10 +68,13 @@ double K = 10;
 // Serial Communications stuff
 int temp;
 boolean newWristGraspCmd = false;
-boolean newMotorSetpoint = false;
+boolean newMotorDistance = false;
 Messenger piMessage = Messenger(':');
-int wristCmd = 120;
-int graspCmd = 120;
+int wristCmd = 180;
+int graspCmd = 50;
+unsigned int serialReadTimer = 0;
+unsigned int serialPeriod = 20;
+
 
 // Define drive motor object
 DualVNH5019MotorDriver driveMotors(Drive_INA1,Drive_INB1,PWMDrivePin_Left,\
@@ -102,24 +105,16 @@ void messageParse(){
   if (piMessage.available()){
     temp = piMessage.readInt();
     if (temp != 9){ activeBehavior = temp;}
-    temp = piMessage.readChar();
-    if (temp != 99){ 
-      leftSetpointValue = temp;
-      //newMotorSetpoint = true;
+    
+    leftDistance = piMessage.readInt();
+    rightDistance = piMessage.readInt();
+    if (leftDistance != 99 && rightDistance != 99){ 
+      newMotorDistance = true;
     }
-    temp = piMessage.readInt();
-    if (temp != 99){ 
-      rightSetpointValue = temp;
-      //newMotorSetpoint = true;
-    }
-    temp = piMessage.readInt(); 
-    if (temp != 999){ 
-      wristCmd = temp;
-      newWristGraspCmd = true;
-    }
-    temp = piMessage.readInt();
-    if (temp != 999){ 
-      graspCmd = temp;
+    
+    wristCmd = piMessage.readInt();
+    graspCmd = piMessage.readInt();
+    if (wristCmd != 999 || graspCmd != 999){ 
       newWristGraspCmd = true;
     }    
   }  
@@ -133,6 +128,9 @@ void setup() {
   
   Wrist.attach(PWMWristPin);
   Grasp.attach(PWMGraspPin);  
+  
+  Wrist.write(wristCmd);
+  Grasp.write(graspCmd);
 
 
   /* Set PID output limits
@@ -152,8 +150,8 @@ void setup() {
   Serial.begin(9600);
   piMessage.attach(messageParse);
   
-  leftSetpoint = 0;
-  rightSetpoint = 0;
+  leftSetpoint = 3;
+  rightSetpoint = 3;
   
 
   
@@ -161,15 +159,17 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  
-  while( Serial.available() ) piMessage.process(Serial.read());
-  
   unsigned int currentTime = millis();
+  
+  if (currentTime-serialReadTimer > serialPeriod){
+    serialReadTimer = currentTime;
+    while( Serial.available() ) piMessage.process(Serial.read());
+  }
   
   if (newWristGraspCmd){
     Serial.println("Repeat Back " + String(activeBehavior)+ " " + String(wristCmd) + " " + String(graspCmd));  
     // Make sure to check inout bounds
-    if((wristCmd >= 40 && wristCmd <= 170) && wristCmd != 999){
+    if((wristCmd >= 40 && wristCmd <= 180) && wristCmd != 999){
       Wrist.write(wristCmd);
       //Serial.println("Repeat Back " + String(panCmd));  
     }
@@ -180,18 +180,9 @@ void loop() {
     newWristGraspCmd = false;
   }  
   
-  if (newMotorSetpoint){
-    Serial.println("Repeat Back " + String(activeBehavior)+ " " + String(wristCmd) + " " + String(graspCmd));  
-    // Make sure to check inout bounds
-    if((wristCmd >= 40 && wristCmd <= 170) && wristCmd != 999){
-      Wrist.write(wristCmd);
-      //Serial.println("Repeat Back " + String(panCmd));  
-    }
-    if((graspCmd >= 45 && graspCmd <= 135) && graspCmd != 999){
-      Grasp.write(graspCmd);
-      //Serial.println("Repeat Back " + String(State)+ " " + String(panCmd) +" " String(tiltCmd));  
-    } 
-    newWristGraspCmd = false;
+  if (newMotorDistance){
+    Serial.println("Repeat Back " + String(activeBehavior)+ " " + String(leftDistance) + " " + String(rightDistance));  
+    newMotorDistance = false;
   }  
 
   // Need to convert to actual position measurements.
@@ -224,9 +215,9 @@ void loop() {
     rightSetpoint = 0;
     driveMotors.setSpeeds(0, 0);
     driveStop = true;
-    Serial.print(leftInput);
-    Serial.print(' ');
-    Serial.println(rightInput);
+    //Serial.print(leftInput);
+    //Serial.print(' ');
+    //Serial.println(rightInput);
   }
   
 }

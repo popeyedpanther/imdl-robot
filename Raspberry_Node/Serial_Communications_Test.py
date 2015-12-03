@@ -22,17 +22,18 @@ def convertStr(s):
 
 
 # Serial communcations for the Arduino Mega
-arduinoMega = serial.Serial('/dev/ttyACM2', 9600)
+arduinoMega = serial.Serial('/dev/ttyACM0', 9600)
 
 # Serial communcations for the Arduino Uno	
 arduinoUno = serial.Serial('/dev/ttyACM1', 9600)
 	
+l = 10.375
 
 Loop = True
 
 while Loop:
 	print "This is the Main Menu for the Serial Communications Test"
-	print "1. Change Robot driving speeds"
+	print "1. Move a certain amount"
 	print "2. Change gripper wrist/claw position"
 	print "3. Change pan/tilt angles"
 	print "Q. Quit (Stops all motion)"
@@ -40,18 +41,40 @@ while Loop:
 
 	if choice == "1":
 		while True:
-			print "This is the menu for motor speeds"
-			print "1. Change motor speed setpoints"
+			print "This is the menu for robot movement"
+			print "1. Move Forwards"
+			print "2. Move Backwards"
+			print "3. Turn Left"
+			print "4. Turn Right"
 			print "Q. GO back"
 			choice = raw_input()
 
 			if choice == '1':
-				print "Input desired speed in in/s (0-10 integers only)"
-				speed = convertStr(raw_input())
-				if speed == -1:
-					print "Invalid Input"
-				else:
-					print speed
+				print "Input desired distance"
+				amount = convertStr(raw_input())
+				arduinoMega.write('9:'+ str(amount)+':'+str(amount)+':'+'999:999:'+'\r')
+				sleep(0.1)
+				print arduinoMega.readline
+			elif choice == '2':
+				print "Input desired distance"
+				amount = convertStr(raw_input())
+				arduinoMega.write('9:'+ str(amount)+':'+str(amount)+':'+'999:999:'+'\r')
+				sleep(0.1)
+				print arduinoMega.readline()
+			elif choice == '3':
+				print "Input desired angle"
+				amount = convertStr(raw_input())
+				distance = l*float(amount)
+				arduinoMega.write('9:'+ str(distance)+':'+str(distance)+':'+'999:999:'+'\r')
+				sleep(0.1)
+				print arduinoMega.readline()
+			elif choice == '4':
+				print "Input desired angle"
+				amount = convertStr(raw_input())
+				distance = l*float(amount)
+				arduinoMega.write('9:'+ str(-distance)+':'+str(-distance)+':'+'999:999:'+'\r')
+				sleep(0.1)
+				print arduinoMega.readline()
 			elif choice == 'q' or choice == 'Q':
 				break
 
@@ -66,7 +89,7 @@ while Loop:
 			if choice == '1':
 				print "Input wrist angle in degrees (some limits in place"
 				wrist = convertStr(raw_input())
-				if wrist < 175 and wrist > 30:
+				if wrist < 181 and wrist > 30:
 					arduinoMega.write('9:99:99:'+ str(wrist)+':'+'999:'+'\r')
 					sleep(0.1)
 					print arduinoMega.readline()
@@ -115,15 +138,7 @@ while Loop:
 
 	elif choice == 'q' or choice == 'Q':
 		# Send messages to turn off actuators
+		arduinoMega.write('9:0:0:180:50:'+'\r')
+		arduinoMega.close()
+		arduinoUno.close()
 		Loop = False
-
-
-	"""
-	ArdSerial.write(str(chr(counter)))
-	print ArdSerial.readline()
-	sleep(0.1)
-	if counter == 255:
-		counter = 32
-	
-	"""
-
