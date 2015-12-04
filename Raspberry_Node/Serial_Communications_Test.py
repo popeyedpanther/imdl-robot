@@ -22,10 +22,10 @@ def convertStr(s):
 
 
 # Serial communcations for the Arduino Mega
-arduinoMega = serial.Serial('/dev/ttyACM0', 9600)
+arduinoMega = serial.Serial('/dev/ttyACM1', 9600)
 
 # Serial communcations for the Arduino Uno	
-arduinoUno = serial.Serial('/dev/ttyACM1', 9600)
+arduinoUno = serial.Serial('/dev/ttyACM2', 9600)
 	
 l = 10.375
 

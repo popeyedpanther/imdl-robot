@@ -113,6 +113,7 @@ double K = 10;
 
 // Serial Communications stuff
 int temp;
+boolean OAoff = fals
 boolean newWristGraspCmd = false;
 boolean newMotorSetpoint = false;
 Messenger piMessage = Messenger(':');
@@ -176,22 +177,19 @@ void messageParse(){
   if (piMessage.available()){
     temp = piMessage.readInt();
     if (temp != 9){ activeBehavior = temp;}
-    temp = piMessage.readChar();
-    if (temp != 99){ 
-      leftSetpointValue = temp;
-      //newMotorSetpoint = true;
+    
+    leftSetpointValue = piMessage.readInt);
+    righttSetpointValue = piMessage.readInt);
+    if (leftSetpointValue != 99 || rightSetpointValue != 99){
+      newMotorSetpoint = true;
     }
-    temp = piMessage.readInt();
-    if (temp != 99){ 
-      rightSetpointValue = temp;
-      //newMotorSetpoint = true;
-    }
+
     wristCmd = piMessage.readInt();
     graspCmd = piMessage.readInt();  
-    
     if (wristCmd != 999 || graspCmd != 999){ 
       newWristGraspCmd = true;
     }
+    
   }  
 }
 
