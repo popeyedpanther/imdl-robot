@@ -108,9 +108,11 @@ double rightSetpoint, rightInput, rightOutput;
 int leftSetpointValue, rightSetpointValue; // Intermediate before the setpoints are actually changed
 boolean leftDone = false, rightDone = false;
 
+double leftOffset= 0.50, rightOffset = 1.25; // Distance offsets to account stopping time.
+
 // PID Tuning Paramters
-double lKp = 3, lKi = 0, lKd = 1.5;
-double rKp = 3, rKi = 0, rKd = 1.5;
+double lKp = 1.75, lKi = 0, lKd = 1.25;
+double rKp = 1.75, rKi = 0, rKd = 1.25;
 
 double K = 10;
 
@@ -119,7 +121,7 @@ boolean newBehavior = false;
 boolean newDistance = false;   // Signifies if a new command has been recieved           
 boolean newWristGraspCmd = false;   // Signifies if a new command has been recieved
 boolean newRequest = false;
-boolean OAoff = false;              // To turn obstacle avoidance on or off   
+boolean OAoff = false;              // To turn obstacle avoidance on or off
 
 int requestComplete = 0, oaOveride = 0;
 
@@ -128,6 +130,7 @@ Messenger piMessage = Messenger(':');
 int wristCmd = 120, graspCmd = 120;
 float leftDistance = 0, rightDistance = 0;
 float robotSpeed = 5;
+double stopDist = 23;
 
 // State Update Variables
 float dx = 0, dy = 0, dtheta = 0;

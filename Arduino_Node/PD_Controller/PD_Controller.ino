@@ -24,11 +24,11 @@ const int leftCurrentPin = 2;    // A8, CS1
 const int rightCurrentPin = 3;   // A9, CS2
 
 // Encoder Input
-const int leftEncoderAPin = 19;   // Digital Pin 21, 2 interrupt pin for Mega 2560
-const int leftEncoderBPin = 17;   // Digital Pin 20, 3 interrupt pin for Mega 2560
+const int leftEncoderAPin = 21;   // Digital Pin 21, 2 interrupt pin for Mega 2560
+const int leftEncoderBPin = 20;   // Digital Pin 20, 3 interrupt pin for Mega 2560
 
-const int rightEncoderAPin = 18;  // Digital Pin 19, 4 interrupt pin for Mega 2560
-const int rightEncoderBPin = 16;  // Digital Pin 18, 5 interrupt pin for Mega 2560
+const int rightEncoderAPin = 19;  // Digital Pin 19, 4 interrupt pin for Mega 2560
+const int rightEncoderBPin = 18;  // Digital Pin 18, 5 interrupt pin for Mega 2560
 
 // Used for sensor sampling times
 unsigned long currentMillis;            // Stores the current time reading in milliseconds
@@ -49,7 +49,7 @@ double rightSetpoint, rightInput, rightOutput;
 boolean leftDone = false, rightDone = false;
 
 // PID Tuning Paramters
-double lKp = 3, lKi = 0, lKd = 3;
+double lKp = 1.75, lKi = 0, lKd = 1.25;
 double rKp = 1.75, rKi = 0, rKd = 1.25;
 
 double K = 10;
@@ -79,8 +79,8 @@ unsigned int timer = 0;
 
 boolean driveStop = false;
 
-double stopDist = 27;
-double leftOffset= 0, rightOffset = 1.02;
+double stopDist = 23;
+double leftOffset= 0.50, rightOffset = 1.25;
 
 
 
@@ -141,10 +141,7 @@ void loop() {
   rightInput = rightEncoder.read()*C;
   if(!driveStop){rightDone = rightPID.Compute();}
   
-  
-
-  
-  if(abs(rightInput)>(stopDist-rightOffset) && rightSetpoint != 0){
+  if(abs(leftInput)>(stopDist-leftOffset) && abs(rightInput)>(stopDist-rightOffset) && rightSetpoint != 0){
     Serial.print(leftInput);
     Serial.print(' ');
     Serial.println(rightInput);
@@ -152,8 +149,6 @@ void loop() {
     rightSetpoint = 0;
   }
   
-
-
   if((leftDone && rightDone)){
       // Set the speeds together
       driveMotors.setSpeeds(K*leftOutput, K*rightOutput);
@@ -168,9 +163,9 @@ void loop() {
     Serial.println(rightInput);
     rightOldPosition = rightNewPosition;
     rightNewPosition = rightInput;
-    //if(abs(rightNewPosition - rightOldPosition)< 0.000001){
-      //Serial.end();
-    //}
+    if(abs(rightNewPosition - rightOldPosition)< 0.0001){
+      Serial.end();
+    }
     
   }
   
