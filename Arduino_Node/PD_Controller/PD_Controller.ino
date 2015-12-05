@@ -63,10 +63,6 @@ rightCurrentPin, 1);
 Encoder leftEncoder(leftEncoderAPin, leftEncoderBPin);
 Encoder rightEncoder(rightEncoderBPin, rightEncoderBPin);
 
-unsigned int timer = 0;
-
-boolean driveStop = false;
-
 /* Define PID object
  *  PID will take the velocity as an input. So the derivative will be calculated be calling the PID function
  */
@@ -78,6 +74,13 @@ PID rightPID(&rightInput, &rightOutput, &rightSetpoint, rKp, rKi, rKd, DIRECT);
 unsigned int changespeedsTimer = 0;
 unsigned int changeSpeeds = 10000;
 boolean stopped = false;
+
+unsigned int timer = 0;
+
+boolean driveStop = false;
+
+float stopDist = 20;
+float leftOffset= 0, rightOffset = 0;
 
 
 
@@ -112,7 +115,8 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  
+
+  /*
   unsigned int currentTime = millis();
 
   if((currentTime - changespeedsTimer) > changeSpeeds){
@@ -127,7 +131,7 @@ void loop() {
     
     stopped = true;  
   }
-  
+  */
 
   // Need to convert to actual position measurements.
   leftInput = leftEncoder.read()*C; 
@@ -144,6 +148,14 @@ void loop() {
     
   }
   */
+  if(leftInput>(stopDist-leftOffset) && rightInput>(stopDist-rightOffset)){
+    driveStop = true;
+    Serial.print(leftInput);
+    Serial.print(' ');
+    Serial.println(rightInput);
+    leftSetpoint = 0;
+    rightSetpoint = 0;
+  }
 
     if((leftDone && rightDone)){
       // Set the speeds together

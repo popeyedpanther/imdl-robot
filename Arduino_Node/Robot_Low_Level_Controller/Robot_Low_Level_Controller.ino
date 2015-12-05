@@ -64,16 +64,21 @@ const int rightIRPin = 1;         // A1
 const int leftCurrentPin = 2;    // A8, CS1
 const int rightCurrentPin = 3;   // A9, CS2
 
-// Push button start
-//const int Push_button = A13; // For push to start button
-
 // ---Sensor sampling periods---
 const unsigned long irPeriod = 100;      // Sampling period for IR Sensors (ms)
 const unsigned long currentPeriod = 100; // Sampling period for current sensor (ms)
 const unsigned long encoderPeriod = 50;  // Sampling period for encodert sensor (ms)
+const unsigned long serialPeriod = 100;  // Sampling period for encodert sensor (ms)
+
+// Used for sensor sampling times
+unsigned long currentMillis;            // Stores the current time reading in milliseconds
+unsigned long previousMillis_IR=0;      // Stores the previous time the IR sensors were read
+unsigned long previousMillis_Current=0; // Stores the previous time the Current sensors were read
+unsigned long previousMillis_Encoder=0; // Stores the previous time the encoder were read
+unsigned long previousMillis_Serial=0;   // Stores the previous time the encoder were read
 
 // ---Constants---
-const int eps = 0.5;
+const int eps = 0.75;
 
 // Encoder Conversion Constant
 const double C = (3.54*3.14159)/4741.41;
@@ -89,7 +94,7 @@ float irRightAvg;                // Used to store right IR average reading
 
 int currentLeft[4] = {0, 0, 0, 0};   // Stores Left Drive Motor Current Reading
 int currentRight[4] = {0, 0, 0, 0};  // Stores Right Drive Motor Current Reading
-int currentValue;                 // For current measurement (amps)
+int currentValue;                   // For current measurement (amps)
 float currentLeftAvg;               // Used to store the average current sensor reading for the left motor            
 float currentRightAvg;              // Used to store the average current sensor reading for the right motor   
 
@@ -112,13 +117,22 @@ double rKp = 3, rKi = 0, rKd = 1.5;
 double K = 10;
 
 // Serial Communications stuff
-int temp;
-boolean OAoff = fals
-boolean newWristGraspCmd = false;
-boolean newMotorSetpoint = false;
+boolean newBehavior = false;
+boolean newDistance = false;   // Signifies if a new command has been recieved           
+boolean newWristGraspCmd = false;   // Signifies if a new command has been recieved
+boolean newRequest = false;
+boolean OAoff = false;              // To turn obstacle avoidance on or off   
+
+int requestComplete = 0, oaOveride = 0;
+
 Messenger piMessage = Messenger(':');
-int wristCmd = 120;
-int graspCmd = 120;
+
+int wristCmd = 120, graspCmd = 120;
+float leftDistance = 0, rightDistance = 0;
+float robotSpeed = 5;
+
+// State Update Variables
+float dx = 0, dy = 0, dtheta = 0;
 
 
 // Sensor Flags
@@ -129,11 +143,7 @@ boolean currentFlag = false;        // Will be set true if Current sense conditi
 volatile boolean bumpFlag = false;  // Will be set true if a bump sensor is triggered
   volatile int bumpRecomnd = 0;     // Will indicate whether left or right sensor was triggered
 
-// Used for sensor sampling times
-unsigned long currentMillis;            // Stores the current time reading in milliseconds
-unsigned long previousMillis_IR=0;      // Stores the previous time the IR sensors were read
-unsigned long previousMillis_Current=0; // Stores the previous time the Current sensors were read
-unsigned long previousMillis_Encoder=0; // Stores the previous time the encoder were read
+
 
 // Arbiter Variables
 boolean actionLock = false;
@@ -165,9 +175,8 @@ Servo Grasp;
 // Test Variables
 const String leftString = "Left IR Reading: ";
 const String rightString = "Right IR Reading: ";
-unsigned int timer = 0;
 
-boolean driveStop = false;
+boolean readyBypass = false;
 
 //------- Message parsing function -------------------------
 
@@ -175,21 +184,25 @@ void messageParse(){
   // This will set the variables that need to be changed
   // from the message
   if (piMessage.available()){
-    temp = piMessage.readInt();
-    if (temp != 9){ activeBehavior = temp;}
+    activeBehavior = piMessage.readInt();
+    if (temp != 9){ newBehavior = true;}
     
-    leftSetpointValue = piMessage.readInt);
-    righttSetpointValue = piMessage.readInt);
-    if (leftSetpointValue != 99 || rightSetpointValue != 99){
-      newMotorSetpoint = true;
-    }
+    leftDistance = piMessage.readInt);
+    rightDistance = piMessage.readInt);
+    if (leftSetpointValue != 99 || rightSetpointValue != 99){ newDistance = true; }
 
     wristCmd = piMessage.readInt();
     graspCmd = piMessage.readInt();  
-    if (wristCmd != 999 || graspCmd != 999){ 
-      newWristGraspCmd = true;
-    }
-    
+    if (wristCmd != 999 || graspCmd != 999){ newWristGraspCmd = true;}
+      
+    robotSpeed = piMessage.readInt();
+    if (robotSpeed != 99){ newRobotSpeed = true; }
+
+    requestState = piMessage.readInt();
+    if (requestState != 9) { newRequest = true;} 
+
+    oaState  = piMessage.readInt();
+    if ( oaState == 0 ) {OAoff = true;}
   }  
 }
 
@@ -236,49 +249,50 @@ void setup()  // Needs to stay in setup until all necessary communications can b
   Serial.begin(9600);           // set up Serial library at 9600 bps  boolean readyBypass = true;
   piMessage.attach(messageParse); 
 
-  /*
   while(1){
-    // Set readyBypass to true to skip waiting for Raspberry Pi 2 confirmation and button switch confimation
+    // Set readyBypass to true to skip waiting for Odroid confirmation and button switch confimation
     if (readyBypass){
       break;
     }
     
-    incomingbyte = Serial.read()
+    inByte = Serial.read();
 
-    // Also need to read in the start button state
-
-    if (inByte == 0){
-      // Turn LED on for ready or write to LCD board.
-      if (){
+    if (inByte == 's'){
         break;
-      }
-      
     }
 
-  }
-   
-  }
+    Serial.write('r');
 
-  */
-  
-  /* Should Send confirmation to Raspberry Pi 2 if all services running
-   *  and then wait for a message from the Odroid to continue to the Main Loop
-   */
-  
+    delay(100);
+  }
 }
 
 //--------Main Loop--------------------------------------
 
-void loop() // run over and over again
+void loop()
 {
-  // Contains all actions the robot will perform.
-  // Obstacle avoidance behaviors should override and sent commands from the Raspberry Pi 2 until they have completed.
-  // Should always check IR and Bump sensors before performing requested tasks.
-  // Camera positioning should not be overrid by obstacle avoidance behaviors
-
+  
+  currentMillis = millis(); // Program run time in milliseconds.
+  
   // Read serial and call parser
-  while( Serial.available() ) piMessage.process(Serial.read());
+  if (currentMillis - previousMillis_Serial > serialPeriod){
+    previousMillis_Serial = currentMillis;
+    while( Serial.available() ) piMessage.process(Serial.read());
+  }
 
+  // Act of behavior here like locking certain commands or something
+  if( newBehavior){
+    if(activeBehavior == 1){
+      
+    }
+    else if(activeBehavior == 2){
+      
+    }
+    else if(activeBehavior == 3){
+      
+    }
+  }
+  
   if (newWristGraspCmd){
     // Makes sure desired angles are acceptable
     if((wristCmd >= 40 && wristCmd <= 170) && wristCmd != 999){
@@ -289,6 +303,12 @@ void loop() // run over and over again
     } 
     newWristGraspCmd = false;
   }  
+
+  if (newRobotSpeed){
+    leftSetpoint = robotSpeed;
+    rightSetpoint = robotSpeed;
+    newRobotSpeed = false;
+  }
 
   currentMillis = millis(); // Program run time in milliseconds. Used for sensor sampling.
 
@@ -310,7 +330,6 @@ void loop() // run over and over again
     irRight[1] = irRight[2];
     irRight[2] = irRight[3];
     irRight[3] = irValue;
-    delay(1);
     
     // Calculate the average input
     irLeftAvg = (float(irLeft[0]) + float(irLeft[1]) + float(irLeft[2]) + float(irLeft[3]))/4;
@@ -319,6 +338,50 @@ void loop() // run over and over again
     // Convert voltage reading to units of inches.
     irLeftAvg = 573.01 * pow(float(irLeftAvg),-0.909);
     irRightAvg = 1768.2* pow(float(irRightAvg), -1.114);
+
+    // !! Reivisit this first if statement !!
+    if (irLeftAvg < 3.5 && irRightAvg >= 3.5){
+      // reverse and turn right
+      bumpRecomnd = 3;
+      bumpFlag = true;
+    }
+    else if (irLeftAvg >= 3.5 && irRightAvg < 3.5){
+      // reverse and turn left
+      bumpRecomnd = 4;
+      bumpFlag = true;
+    }
+    else if (irLeftAvg < 3.5 && irRightAvg < 3.5){
+      // reverse and turn left or right
+      if(random(0,9)/5 == 1){
+        bumpRecomnd = 3;
+      }
+      else{
+        bumpRecomnd = 4;
+      }
+      bumpFlag = true;
+    }
+    else if((irRightAvg-irLeftAvg)< eps && (irLeftAvg >= 3.5 && irLeftAvg < 5.5)\
+          && (irRightAvg >= 3.5 && irRightAvg < 5.5)) {
+    
+      irRecomnd = 1;  // Turn left or right
+    }
+    else if(irLeftAvg >= 3.5 && irLeftAvg < 5.5 && irRightAvg > 5.5){
+      irRecomnd = 2;  // Turn right some random amount
+    }
+    else if(irRightAvg >= 3.5 && irRightAvg < 5.5 && irLeftAvg > 5.5){
+      irRecomnd = 3;  // Turn left some random amount
+    }
+    else{
+      irRecomnd = 0;
+    }
+     
+    // If the IR recommends something then set the flag to true
+    if(irRecomnd != 0){
+      irFlag = true;
+    }
+    else{
+      irFlag = false;
+    }
 
     // Debugging outputs
     //  Serial.print(leftString + String(irLeftAvg) + " " );
@@ -342,7 +405,6 @@ void loop() // run over and over again
     currentRight[1] = currentRight[2];
     currentRight[2] = currentRight[3];
     currentRight[3] = currentValue;
-    delay(1);
        
     // Calculate average current reading over three samples to try to not in spikes.
     currentLeftAvg = (float(currentLeft[0]) + float(currentLeft[1]) + float(currentLeft[2]) + float(currentLeft[3]))/4;
@@ -351,9 +413,9 @@ void loop() // run over and over again
     // Convert to real units (amps)
     currentLeftAvg = 0.034 * currentLeftAvg;
     currentRightAvg = 0.034 * currentRightAvg;
-    
+
+    // Tune this value
     if(currentLeftAvg >= 4 || currentRightAvg >= 4) {
-    
       currentRecomnd = 1;  // Arbitraty number for now just to trigger the flag.
     }
     else{
@@ -364,10 +426,10 @@ void loop() // run over and over again
     if(currentRecomnd != 0){
       currentFlag = true;
     }
-    else{
+    else{ 
       currentFlag = false;
     }
-
+    
     // Debug variable declaration
     //currentFlag = false;
 
@@ -419,6 +481,35 @@ void loop() // run over and over again
   }
 }
 
+// State Update
+
+
+
+
+// PD controller
+// Need to convert to actual position measurements.
+  leftInput = leftEncoder.read()*C; 
+  leftDone = leftPID.Compute();
+  
+  rightInput = rightEncoder.read()*C;
+  rightDone = rightPID.Compute();
+
+  /*
+  if(currentTime - timer > 2000){
+    Serial.print(leftInput);
+    Serial.print(' ');
+    Serial.println(rightInput);
+    
+  }
+  */
+
+  if((leftDone && rightDone)){
+    // Set the speeds together
+    driveMotors.setSpeeds(K*leftOutput, K*rightOutput);
+    leftDone = false;
+    rightDone = false;
+  }
+  
 //--------------------------------------------------------------------------------------------------------------
 // ---Extra Error Function---
 // This function is used by the Pololu motor drivers to handle errors in operation
@@ -426,12 +517,12 @@ void stopIfFault()
 {
   if (driveMotors.getM1Fault())
   {
-    //Serial.println("M1 fault");
+    //Serial.println("M1 fault:");
     while(1);
   }
   if (driveMotors.getM2Fault())
   {
-    //Serial.println("M2 fault");
+    //Serial.println("M2 fault:");
     while(1);
   }
 }
@@ -451,5 +542,3 @@ void bumpRight()
   actionOverride = true;
   bumpRecomnd = 4;
 }
-
-// ---Encoder Interrupt Functions go Here---

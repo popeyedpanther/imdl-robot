@@ -23,6 +23,29 @@ class Robot:
 
         self.beaconPos = beacons
 
+    def unoSetup(self):
+        # Uno should not return ready unless button is pressed.
+        message = self.arduinoUno.readline()
+
+        if message == "r":
+            Ready = True
+            self.arduinoUno.write("s" + "\r")
+        else:
+            Ready = False
+
+        return Ready
+
+    def megaSetup(self):
+
+        message = self.arduinoMega.readline()
+
+        if message == "r":
+            Ready = True
+            self.arduinoMega.write("s" + "\r")
+        else:
+            Ready = False
+
+        return Ready
 
     def stateUpdate(self):
         self.arduinoMega.write()
@@ -33,7 +56,7 @@ class Robot:
         self.state += statechange
 
     def move(self, Dir, Amount):
-
+        # This needs to be updated for new message standard.
         if Dir == 'L' or Dir == 'l':
             self.arduinoMega.write("9:2:" + str(Amount) + ":" + "999:999:9")
         elif Dir == 'R' or Dir == 'r':
