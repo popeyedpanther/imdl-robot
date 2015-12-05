@@ -24,11 +24,11 @@ const int leftCurrentPin = 2;    // A8, CS1
 const int rightCurrentPin = 3;   // A9, CS2
 
 // Encoder Input
-const int leftEncoderAPin = 21;   // Digital Pin 21, 2 interrupt pin for Mega 2560
-const int leftEncoderBPin = 20;   // Digital Pin 20, 3 interrupt pin for Mega 2560
+const int leftEncoderAPin = 19;   // Digital Pin 21, 2 interrupt pin for Mega 2560
+const int leftEncoderBPin = 17;   // Digital Pin 20, 3 interrupt pin for Mega 2560
 
-const int rightEncoderAPin = 19;  // Digital Pin 19, 4 interrupt pin for Mega 2560
-const int rightEncoderBPin = 18;  // Digital Pin 18, 5 interrupt pin for Mega 2560
+const int rightEncoderAPin = 18;  // Digital Pin 19, 4 interrupt pin for Mega 2560
+const int rightEncoderBPin = 16;  // Digital Pin 18, 5 interrupt pin for Mega 2560
 
 // Used for sensor sampling times
 unsigned long currentMillis;            // Stores the current time reading in milliseconds
@@ -161,15 +161,16 @@ void loop() {
       rightDone = false;
     }
     
-  if((currentTime - timer > 2000)){
+  if((currentTime - timer > 200)){
+    timer = currentTime;
     Serial.print(leftInput);
     Serial.print(' ');
     Serial.println(rightInput);
     rightOldPosition = rightNewPosition;
     rightNewPosition = rightInput;
-    if(abs(rightNewPosition - rightOldPosition)< 0.0001){
-      Serial.end();
-    }
+    //if(abs(rightNewPosition - rightOldPosition)< 0.000001){
+      //Serial.end();
+    //}
     
   }
   

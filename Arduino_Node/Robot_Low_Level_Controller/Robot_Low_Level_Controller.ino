@@ -32,8 +32,6 @@ const int PWMDrivePin_Right = 12;   // Timer 1 16-bit
 const int PWMWristPin = 7;
 const int PWMGraspPin = 6;
 
-// ---LED Pins---
-
 // ---Pololu Motor Pins---
 const int Drive_INA1=22;     // Left Drive Motor
 const int Drive_INB1=23;     // Left Drive Motor
