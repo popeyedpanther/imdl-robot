@@ -148,7 +148,7 @@ void loop() {
     
   }
   */
-  if(leftInput>(stopDist-leftOffset) && rightInput>(stopDist-rightOffset)){
+  if(abs(leftInput)>(stopDist-leftOffset) && abs(rightInput)>(stopDist-rightOffset)){
     driveStop = true;
     Serial.print(leftInput);
     Serial.print(' ');
