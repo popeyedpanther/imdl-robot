@@ -12,24 +12,16 @@
 //
 // end license header
 //
-// This sketch is a good place to start if you're just getting started with 
-// Pixy and Arduino.  This program simply prints the detected object blocks 
-// (including color codes) through the serial console.  It uses the Arduino's 
-// ICSP port.  For more information go here:
+// This sketch is like hello_world but uses I2C communications.  If you're
+// not sure what I2C is, run the hello_world sketch!
 //
-// http://cmucam.org/projects/cmucam5/wiki/Hooking_up_Pixy_to_a_Microcontroller_(like_an_Arduino)
-//
-// It prints the detected blocks once per second because printing all of the 
-// blocks for all 50 frames per second would overwhelm the Arduino's serial port.
-//
-   
-#include <SPI.h>  
-#include <Pixy.h>
 
-boolean firstime = true;
+#include <Wire.h>
+#include <PixyI2C.h>
 
-// This is the main Pixy object 
-Pixy pixy;
+
+PixyI2C pixy;
+// PixyI2C pixy(0x55); // You can set the I2C address through PixyI2C object 
 
 void setup()
 {
@@ -37,25 +29,18 @@ void setup()
   Serial.print("Starting...\n");
   
   pixy.init();
-  pixy.setBrightness(90);
-  
 }
 
-void loop()
+
+void loop() 
 { 
-  if(firstime){
-    Serial.print("Started\n");
-   firstime = false; 
-  }
   static int i = 0;
   int j;
   uint16_t blocks;
   char buf[32]; 
   
-  // grab blocks!
   blocks = pixy.getBlocks();
   
-  // If there are detect blocks, print them!
   if (blocks)
   {
     i++;

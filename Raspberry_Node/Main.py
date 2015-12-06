@@ -28,7 +28,6 @@ while True:
     if not megaReady:
         megaReady = Bob.megaSetup()
 
-
     if unoReady and megaReady:
         continuousRun = True
         break
@@ -36,7 +35,17 @@ while True:
 while continuousRun:
     # Bob should localize first time through
 
+    # Just start moving forward (maybe move randomly to increase chance of seeing block
     Bob.move("F", 25)
+
+    # Poll the Uno and Mega for updates
+    Bob.stateUpdate()
+
+    # Update the state of Bob maybe after some specified time.
+
+    # Behavior changes should go here
+
+
 
     if taskComplete:
         # Stop robot functions and then break loop

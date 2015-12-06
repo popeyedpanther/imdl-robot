@@ -1,3 +1,4 @@
+
 /* Patrick Header Here
  *
  */
@@ -7,16 +8,42 @@
 #include <Servo.h>
 #include <Pixy.h>
 #include <SPI.h>
-//#include <PixySPI_SS.h>
-// Possibly include LCD library
+#include <Messenger.h>
+//#include <LiquidCrystal.h>
 
 //----- Variable Declarations -----
+
 // Servomotor Pins
 const int panPWM = 9;
 const int tiltPWM = 10;
 
+// Button Pin
+const int startPin = 7;
+int buttonState = HIGH;
+int button;
+int previousButton = LOW;
+
+//---- Timing Variables ----
+unsigned long currentMillis;
+
+unsigned long debouncePeriod = 200;
+
+
 // Binary true/false array to store if the object has been recovered yet.
 int blocksFound[2] = {0, 0}; // Zero is false
+
+// Serial Communications stuff
+int activeBehavior = 0;
+boolean newBehavior = false;
+int panCmd = 90, tiltCmd = 90;        
+boolean newPanTiltCmd = false;  // Signifies if a new command has been recieved
+boolean newRequest = false;
+boolean startButton = false;    // Start button needs to be pressed in order for Bob to start moving
+boolean readyBypass = false;    //Used to bypass the serial ready check
+
+//----Define Objects----
+// Create a message object
+Messenger piMessage = Messenger(':');
 
 // Define pan tilt servo objects
 Servo Pan;
@@ -25,21 +52,61 @@ Servo Tilt;
 // Define pixy object
 Pixy ffPixy; // Forward Facing Pixy
 
+//----Serial Communications Parser----
+void messageParse(){
+  // This will set the variables that need to be changed
+  // from the message
+  if (piMessage.available()){
+    activeBehavior = piMessage.readInt();
+    if (activeBehavior != 9){ 
+      newBehavior = true;
+    }
+    panCmd = piMessage.readInt();
+    tiltCmd = piMessage.readInt();
+    if (panCmd != 999 || tiltCmd != 999){ 
+      newPanTiltCmd = true;
+    }
+  }  
+}
+
 void setup() {
   
   // Attach servo to specific pins
   Pan.attach(panPWM);
   Tilt.attach(tiltPWM);
-  // Initialize Pixy object?
+  // Align servos to default locatios
+  Pan.write(panCmd);
+  Tilt.write(tiltCmd);
+  
+  // Initialize Pixy object
   ffPixy.init();
+  
   // Start serial and wait for the "Go" command
   Serial.begin(9600);
-  // Stay in a loop until read to move on
-  /*while (1){
+  piMessage.attach(messageParse);
   
+  // Stay in a loop until read to move on
+  while(1){
+    // Set readyBypass to true to skip waiting for Odroid confirmation and button switch confimation
+    if (readyBypass){
+      break;
+    }
 
-  */  
+    if(startButton){
+      Serial.write('r');
+    }
+    
+    char inByte = Serial.read();
+
+    if (inByte == 's'){
+        break;
+    }
+
+    
+
+    delay(100);
   }
+}
   
 void loop() {
   // put your main code here, to run repeatedly:
@@ -50,5 +117,51 @@ void loop() {
    *  and apply them. SHould include some deadband to stop jittering.
    *  This will maybe include the code to display the LCD.
    */
+
+  while( Serial.available() ) piMessage.process(Serial.read());
+
+  if (newPanTiltCmd){
+    Serial.println("Repeat Back " + String(activeBehavior)+ " " + String(panCmd) + " " + String(tiltCmd));  
+    // Make sure to check inout bounds
+    if((panCmd >= 0 && panCmd <= 180) && panCmd != 999){
+      Pan.write(panCmd);
+      //Serial.println("Repeat Back " + String(panCmd));  
+    }
+    if((tiltCmd >= 80 && tiltCmd <= 130) && tiltCmd != 999){
+      Tilt.write(tiltCmd);
+      //Serial.println("Repeat Back " + String(State)+ " " + String(panCmd) +" " String(tiltCmd));  
+    } 
+    newPanTiltCmd = false;
+  }  
+
+  // Pixy Read
+  static int i = 0;
+  int j;
+  uint16_t blocks;
+  char buf[32]; 
+  
+  // grab blocks!
+  blocks = ffPixy.getBlocks();
+  
+  // If there are detect blocks, print them!
+  if (blocks)
+  {
+    i++;
+    
+    // do this (print) every 50 frames because printing every
+    // frame would bog down the Arduino
+    if (i%50==0)
+    {
+      sprintf(buf, "Detected %d:\n", blocks);
+      Serial.print(buf);
+      for (j=0; j<blocks; j++)
+      {
+        sprintf(buf, "  block %d: ", j);
+        Serial.print(buf); 
+        ffPixy.blocks[j].print();
+      }
+    }
+  }  
+
 
 }

@@ -6,7 +6,6 @@ from math import *					# Standard math library
 import serial						# Library for communicating over serial
 import numpy as np					# Matrix math library
 from time import clock, sleep		# Some standard library
-import sys
 
 # Start serial connection with Arduino (These settings will most likely
 # need to be changed).
@@ -16,8 +15,8 @@ def convertStr(s):
     try:
         ret = int(s)
     except ValueError:
-        #Try float.
-        ret = -1
+        # Try float.
+        ret = float(s)
     return ret
 
 
@@ -27,9 +26,17 @@ arduinoMega = serial.Serial('/dev/ttyACM1', 9600)
 # Serial communcations for the Arduino Uno	
 arduinoUno = serial.Serial('/dev/ttyACM2', 9600)
 
-l = 10.375
+b = 10.375
 
 Loop = True
+
+distance = 45
+
+distance = b*distance/2
+
+print "{:.3f}".format(distance)
+
+distance = 0
 
 while Loop:
     print "This is the Main Menu for the Serial Communications Test"
@@ -46,33 +53,45 @@ while Loop:
             print "2. Move Backwards"
             print "3. Turn Left"
             print "4. Turn Right"
+            print "5. Stop"
             print "Q. GO back"
             choice = raw_input()
 
             if choice == '1':
                 print "Input desired distance"
                 amount = convertStr(raw_input())
-                arduinoMega.write('9:'+ str(amount)+':'+str(amount)+':'+'999:999:'+'\r')
+                arduinoMega.write('9:' + "{:.2f}".format(-distance) + ':' + "{:.2f}".format(-distance) + ':' +
+                                  '999:999:99:9:9:' + '\r')
                 sleep(0.1)
                 print arduinoMega.readline
             elif choice == '2':
                 print "Input desired distance"
                 amount = convertStr(raw_input())
-                arduinoMega.write('9:'+ str(amount)+':'+str(amount)+':'+'999:999:'+'\r')
+                arduinoMega.write('9:' + "{:.2f}".format(distance) + ':' + "{:.2f}".format(-distance) + ':' +
+                                  '999:999:99:9:9:' + '\r')
                 sleep(0.1)
                 print arduinoMega.readline()
             elif choice == '3':
                 print "Input desired angle"
                 amount = convertStr(raw_input())
-                distance = l*float(amount)
-                arduinoMega.write('9:'+ str(distance)+':'+str(distance)+':'+'999:999:'+'\r')
+                distance = b*float(amount)/2
+                arduinoMega.write('9:' + "{:.2f}".format(distance) + ':' + "{:.2f}".format(distance) + ':' +
+                                  '999:999:99:9:9:' + '\r')
                 sleep(0.1)
                 print arduinoMega.readline()
             elif choice == '4':
                 print "Input desired angle"
                 amount = convertStr(raw_input())
-                distance = l*float(amount)
-                arduinoMega.write('9:'+ str(-distance)+':'+str(-distance)+':'+'999:999:'+'\r')
+                distance = b*float(amount)/2
+                arduinoMega.write('9:' + "{:.2f}".format(-distance) + ':' + "{:.2f}".format(-distance) + ':' +
+                                  '999:999:' + '\r')
+                sleep(0.1)
+                print arduinoMega.readline()
+            elif choice == '5':
+                print "Stopped"
+                distance = 0
+                arduinoMega.write('9:' + "{:.2f}".format(-distance) + ':' + "{:.2f}".format(-distance) + ':' +
+                                  '999:999:' + '\r')
                 sleep(0.1)
                 print arduinoMega.readline()
             elif choice == 'q' or choice == 'Q':

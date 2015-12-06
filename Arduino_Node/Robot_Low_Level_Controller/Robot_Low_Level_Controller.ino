@@ -13,7 +13,6 @@
 //-------Include Libraries-----------------------------------
 #include <Servo.h>
 #include <DualVNH5019MotorDriver.h> // For use with the Dual motor drivers from Pololu
-#include <LiquidCrystal.h> // For using a LCD display
 #include <Encoder.h>
 #include <PID_v1.h>
 #include <Messenger.h>
@@ -105,10 +104,11 @@ long rightNewPosition = 0;
 // PID input variables
 double leftSetpoint, leftInput, leftOutput;
 double rightSetpoint, rightInput, rightOutput;
-int leftSetpointValue, rightSetpointValue; // Intermediate before the setpoints are actually changed
+
 boolean leftDone = false, rightDone = false;
 
-double leftOffset= 0.50, rightOffset = 1.25; // Distance offsets to account stopping time.
+
+double leftOffset = 0.50, rightOffset = 1.25; // Distance offsets to account stopping time.
 
 // PID Tuning Paramters
 double lKp = 1.75, lKi = 0, lKd = 1.25;
@@ -121,19 +121,22 @@ boolean newBehavior = false;
 boolean newDistance = false;   // Signifies if a new command has been recieved           
 boolean newWristGraspCmd = false;   // Signifies if a new command has been recieved
 boolean newRequest = false;
+boolean newRobotSpeed = false;
 boolean OAoff = false;              // To turn obstacle avoidance on or off
 
-int requestComplete = 0, oaOveride = 0;
 
 Messenger piMessage = Messenger(':');
 
 int wristCmd = 120, graspCmd = 120;
-float leftDistance = 0, rightDistance = 0;
-float robotSpeed = 5;
-double stopDist = 23;
+
+double leftDistance = 0, rightDistance = 0;
+int requestState = 0, requestComplete = 0, oaOveride = 0, oaState = 0;
+double robotSpeed = 5;
 
 // State Update Variables
 float dx = 0, dy = 0, dtheta = 0;
+int motionDirection = 0;
+double leftStartPoint, rightStartPoint;
 
 
 // Sensor Flags
@@ -186,11 +189,11 @@ void messageParse(){
   // from the message
   if (piMessage.available()){
     activeBehavior = piMessage.readInt();
-    if (temp != 9){ newBehavior = true;}
+    if (activeBehavior != 9){ newBehavior = true;}
     
-    leftDistance = piMessage.readInt);
-    rightDistance = piMessage.readInt);
-    if (leftSetpointValue != 99 || rightSetpointValue != 99){ newDistance = true; }
+    leftDistance = piMessage.readInt();
+    rightDistance = piMessage.readInt();
+    if (leftDistance != 99 || rightDistance != 99){ newDistance = true; }
 
     wristCmd = piMessage.readInt();
     graspCmd = piMessage.readInt();  
@@ -340,7 +343,7 @@ void loop()
     irLeftAvg = 573.01 * pow(float(irLeftAvg),-0.909);
     irRightAvg = 1768.2* pow(float(irRightAvg), -1.114);
 
-    // !! Reivisit this first if statement !!
+    // Obstacle Avoidance Logic
     if (irLeftAvg < 3.5 && irRightAvg >= 3.5){
       // reverse and turn right
       bumpRecomnd = 3;
@@ -448,9 +451,10 @@ void loop()
   // Driving will be done here
   // Any sensor flag will trigger alternative behavior
   if (currentFlag || bumpFlag || irFlag) {
+    oaOveride = 1;
     if (currentRecomnd == 1) {
     // Stop motion, robot could be stuck.
-      
+    leftSetpoint = 0; rightSetpoint = 0; 
     }
     else if(bumpRecomnd == 3){
       // Reverse motion
@@ -480,11 +484,51 @@ void loop()
     driveMotors.setM2Speed(75);
     }
   }
+
+//---- Obstacle Avoidance Action ----
+if(!Done){
+  // perform action
+  if(Turn){
+    // Perform Turn
+  }
+
+  
 }
 
-// State Update
+//---- State Update ----
+  if(newDistance){
+    leftStartPoint = leftInput;
+    rightStartPoint = rightInput;
+    
+    if( leftDistance < 0 && rightDistance > 0){
+      //Forward motion
+      motionDirection = 1;
+    }
+    else if(leftDistance > 0 && rightDistance < 0){
+      // Reverse Motion
+      motionDirection = 2;
+    }
+    else if(leftDistance > 0 && rightDistance > 0){
+      // Turning Left
+      motionDirection = 3;
+    }
+    else if(leftDistance < 0 && rightDistance < 0){
+      // Turning Right
+      motionDirection = 4;
+    }
+    else{
+      //Stop
+      motionDirection = 0;
+    }
+  }
 
-
+  if((leftInput - leftStartPoint)>(leftDistance-leftOffset) && abs(rightInput)>(rightDistance-rightOffset) && rightSetpoint != 0){
+    Serial.print(leftInput);
+    Serial.print(' ');
+    Serial.println(rightInput);
+    leftSetpoint = 0;
+    rightSetpoint = 0;
+  }
 
 
 // PD controller
@@ -504,12 +548,18 @@ void loop()
   }
   */
 
-  if((leftDone && rightDone)){
+  if(leftDone && rightDone){
     // Set the speeds together
     driveMotors.setSpeeds(K*leftOutput, K*rightOutput);
     leftDone = false;
     rightDone = false;
   }
+
+
+  
+}
+
+
   
 //--------------------------------------------------------------------------------------------------------------
 // ---Extra Error Function---

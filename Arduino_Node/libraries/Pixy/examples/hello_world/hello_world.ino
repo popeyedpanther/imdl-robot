@@ -26,8 +26,6 @@
 #include <SPI.h>  
 #include <Pixy.h>
 
-boolean firstime = true;
-
 // This is the main Pixy object 
 Pixy pixy;
 
@@ -35,18 +33,12 @@ void setup()
 {
   Serial.begin(9600);
   Serial.print("Starting...\n");
-  
+
   pixy.init();
-  pixy.setBrightness(90);
-  
 }
 
 void loop()
 { 
-  if(firstime){
-    Serial.print("Started\n");
-   firstime = false; 
-  }
   static int i = 0;
   int j;
   uint16_t blocks;

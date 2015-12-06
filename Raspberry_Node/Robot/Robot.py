@@ -49,7 +49,7 @@ class Robot:
 
     def stateUpdate(self):
         self.arduinoMega.write()
-        message = self.readMega()
+        message = self.arduinoMega.readline()
 
         statechange = np.array([float(message[0]), float(message[1]), float(message[2])])
 
