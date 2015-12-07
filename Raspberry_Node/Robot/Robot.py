@@ -16,10 +16,16 @@ class Robot:
         self.behavior = 0                   # Current behavior the robot is in
         self.state = np.array([0, 0, 0])
         # Serial communications for the Arduino Mega
-        self.arduinoMega = serial.Serial(port = '/dev/ttyACM0', baudrate = 9600)
+        self.arduinoMega = serial.Serial(port = '/dev/ttyACM0', baudrate = 9600, timeout = 1, writeTimeout = 2)
 
         # Serial communications for the Arduino Uno
-        self.arduinoUno = serial.Serial(port = '/dev/ttyACM1', baudrate = 9600)
+        self.arduinoUno = serial.Serial(port = '/dev/ttyACM1', baudrate = 9600, timeout = 1, writeTimeout = 2)
+        
+        self.arduinoMega.flushInput()
+		self.arduinoMega.flushOutput()
+
+		self.arduinoUno.flushInput()
+		self.arduinoUno.flushOutput()
 
         self.beaconPos = beacons
 

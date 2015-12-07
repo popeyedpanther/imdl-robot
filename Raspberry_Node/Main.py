@@ -16,22 +16,56 @@ Bob = Robot("Bob", np.array([0, 0, 0]))
 
 setupComplete = False
 continuousRun = False
-unoReady = False
-megaReady = False
 taskComplete = False
 
+arduinoMegaReady = False
+arduinoUnoReady = False
+
+print "Waiting for Arduino Setup"
+
 while True:
-    # Use bob methods to communicate with the arduinos
-    if not unoReady:
-        unoReady = Bob.unoSetup()
+	
+	# Wait for the Arduino Mega to respond ready
+	if not arduinoMegaReady:
+		messageMega = Bob.arduinoMega.readline()
+		print messageMega
+		if messageMega == 'r\r\n':
+			while True:
+				Bob.arduinoMega.write('s')
+				sleep(0.01)
+				if Bob.arduinoMega.readline() == 'g\r\n':
+					break
+			arduinoMegaReady = True
+			print "Mega Done"
+			
+	sleep(0.1)
+	
+	# Wait for the arduino Uno to respond ready
+	if not arduinoUnoReady:
+		messageUno = Bob.arduinoUno.readline()
+		print messageUno
+		if messageUno == 'r\r\n':
+			while True:
+				Bob.arduinoUno.write('s')
+				sleep(0.01)
+				if arduinoUno.readline() == 'g\r\n':
+					break
+			arduinoUnoReady = True
+			print "Uno Done"
+		sleep(0.1)
+	
+	# Leave setup when both arduinos are ready
+	if arduinoMegaReady and arduinoUnoReady:
+		break
 
-    if not megaReady:
-        megaReady = Bob.megaSetup()
+# Clear the serial buffers before main loop
+Bob.arduinoMega.flushInput()
+Bob.arduinoMega.flushOutput()
 
-    if unoReady and megaReady:
-        continuousRun = True
-        break
+Bob.arduinoUno.flushInput()
+Bob.arduinoUno.flushOutpu()
 
+# Robot will run in this loop.
 while continuousRun:
     # Bob should localize first time through
 

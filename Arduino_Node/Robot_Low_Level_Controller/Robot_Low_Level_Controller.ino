@@ -122,14 +122,14 @@ boolean newDistance = false;   // Signifies if a new command has been recieved
 boolean newWristGraspCmd = false;   // Signifies if a new command has been recieved
 boolean newRequest = false;
 boolean newRobotSpeed = false;
-boolean OAoff = false;              // To turn obstacle avoidance on or off
+boolean OAoff = true;              // To turn obstacle avoidance on or off
 
 
 Messenger piMessage = Messenger(':');
 
-int wristCmd = 120, graspCmd = 120;
+int wristCmd = 160, graspCmd = 130;
 
-double leftDistance = 0, rightDistance = 0;
+int leftDistance = 0, rightDistance = 0;
 int requestState = 0, requestComplete = 0, oaOveride = 0, oaState = 0;
 double robotSpeed = 5;
 
@@ -154,6 +154,8 @@ boolean actionLock = false;
 boolean actionOverride = false;
 unsigned long timerLockout = 750;
 unsigned long actionTimer =0;
+boolean Done = false;
+boolean Turn = false;
 
 //----Define Objects-----
 
@@ -218,7 +220,10 @@ void setup()  // Needs to stay in setup until all necessary communications can b
   
   // Attach the servo objects to pins
   Wrist.attach(PWMWristPin);
-  Grasp.attach(PWMGraspPin);  
+  Grasp.attach(PWMGraspPin);
+
+  Wrist.write(wristCmd);
+  Grasp.write(graspCmd);  
 
   // Initialize drive motor object
   driveMotors.init();
@@ -259,13 +264,17 @@ void setup()  // Needs to stay in setup until all necessary communications can b
       break;
     }
     
-    inByte = Serial.read();
-
-    if (inByte == 's'){
+    if (Serial.available() > 0){
+      inByte = Serial.read();
+    }
+    
+    
+    if (inByte == 115){
+        Serial.println('g');
         break;
     }
 
-    Serial.write('r');
+    Serial.println('r');
 
     delay(100);
   }
@@ -443,45 +452,48 @@ void loop()
     */
   }
 //--------------------------------------------------------------------------------------------------------------
-  if((currentMillis - actionTimer) >= random(750,1750) || actionOverride){     
-     actionLock = false;
-     actionOverride = false;
-  }
-       
-  // Driving will be done here
-  // Any sensor flag will trigger alternative behavior
-  if (currentFlag || bumpFlag || irFlag) {
-    oaOveride = 1;
-    if (currentRecomnd == 1) {
-    // Stop motion, robot could be stuck.
-    leftSetpoint = 0; rightSetpoint = 0; 
+  
+  if(!OAoff){  
+    if((currentMillis - actionTimer) >= random(750,1750) || actionOverride){     
+       actionLock = false;
+       actionOverride = false;
     }
-    else if(bumpRecomnd == 3){
-      // Reverse motion
-      if(!actionLock){
-        actionLock = true;
-        driveMotors.setM1Speed(-75);
-        driveMotors.setM2Speed(75);
-        actionTimer =  currentMillis;
-        bumpRecomnd = 0;
+         
+    // Driving will be done here
+    // Any sensor flag will trigger alternative behavior
+    if (currentFlag || bumpFlag || irFlag) {
+      oaOveride = 1;
+      if (currentRecomnd == 1) {
+      // Stop motion, robot could be stuck.
+      leftSetpoint = 0; rightSetpoint = 0; 
       }
-    } 
-    else if(bumpRecomnd == 4){
-      // Reverse motion
-      if(!actionLock){
-        actionLock = true;
-        driveMotors.setM1Speed(-75);
-        driveMotors.setM2Speed(75);
-        actionTimer =  currentMillis;
-        bumpRecomnd = 0;
-      }                                      
+      else if(bumpRecomnd == 3){
+        // Reverse motion
+        if(!actionLock){
+          actionLock = true;
+          driveMotors.setM1Speed(-75);
+          driveMotors.setM2Speed(75);
+          actionTimer =  currentMillis;
+          bumpRecomnd = 0;
+        }
+      } 
+      else if(bumpRecomnd == 4){
+        // Reverse motion
+        if(!actionLock){
+          actionLock = true;
+          driveMotors.setM1Speed(-75);
+          driveMotors.setM2Speed(75);
+          actionTimer =  currentMillis;
+          bumpRecomnd = 0;
+        }                                      
+      }
     }
-  }
-  else{ // This branch is for normal operations
-    // Forward motion
-    if(!actionLock){
-    driveMotors.setM1Speed(-75);
-    driveMotors.setM2Speed(75);
+    else{ // This branch is for normal operations
+      // Forward motion
+      if(!actionLock){
+      leftSetpoint = robotSpeed;
+      rightSetpoint = robotSpeed;
+      }
     }
   }
 
@@ -503,25 +515,36 @@ if(!Done){
     if( leftDistance < 0 && rightDistance > 0){
       //Forward motion
       motionDirection = 1;
+      leftSetpoint = robotSpeed;
+      rightSetpoint = robotSpeed;
     }
     else if(leftDistance > 0 && rightDistance < 0){
       // Reverse Motion
       motionDirection = 2;
+      leftSetpoint = -robotSpeed;
+      rightSetpoint = -robotSpeed;
     }
     else if(leftDistance > 0 && rightDistance > 0){
       // Turning Left
       motionDirection = 3;
+      leftSetpoint = -robotSpeed;
+      rightSetpoint = robotSpeed;
     }
     else if(leftDistance < 0 && rightDistance < 0){
       // Turning Right
       motionDirection = 4;
+      leftSetpoint = robotSpeed;
+      rightSetpoint = -robotSpeed;
     }
     else{
       //Stop
       motionDirection = 0;
+      leftSetpoint = 0;
+      rightSetpoint = 0;
     }
   }
 
+  /*
   if((leftInput - leftStartPoint)>(leftDistance-leftOffset) && abs(rightInput)>(rightDistance-rightOffset) && rightSetpoint != 0){
     Serial.print(leftInput);
     Serial.print(' ');
@@ -529,7 +552,7 @@ if(!Done){
     leftSetpoint = 0;
     rightSetpoint = 0;
   }
-
+  */
 
 // PD controller
 // Need to convert to actual position measurements.

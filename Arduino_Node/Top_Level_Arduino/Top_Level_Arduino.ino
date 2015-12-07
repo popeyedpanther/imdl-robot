@@ -14,8 +14,8 @@
 //----- Variable Declarations -----
 
 // Servomotor Pins
-const int panPWM = 9;
-const int tiltPWM = 10;
+const int panPWM = 6;
+const int tiltPWM = 5;
 
 // Button Pin
 const int startPin = 7;
@@ -33,12 +33,13 @@ unsigned long debouncePeriod = 200;
 int blocksFound[2] = {0, 0}; // Zero is false
 
 // Serial Communications stuff
+int inByte;
 int activeBehavior = 0;
 boolean newBehavior = false;
 int panCmd = 90, tiltCmd = 90;        
 boolean newPanTiltCmd = false;  // Signifies if a new command has been recieved
 boolean newRequest = false;
-boolean startButton = false;    // Start button needs to be pressed in order for Bob to start moving
+boolean startButton = true;    // Start button needs to be pressed in order for Bob to start moving
 boolean readyBypass = false;    //Used to bypass the serial ready check
 
 //----Define Objects----
@@ -91,18 +92,18 @@ void setup() {
     if (readyBypass){
       break;
     }
-
-    if(startButton){
-      Serial.write('r');
+    
+    if (Serial.available() > 0){
+      inByte = Serial.read();
     }
     
-    char inByte = Serial.read();
-
-    if (inByte == 's'){
+    
+    if (inByte == 115 && startButton){
+        Serial.println('g');
         break;
     }
 
-    
+    Serial.println('r');
 
     delay(100);
   }
@@ -123,7 +124,7 @@ void loop() {
   if (newPanTiltCmd){
     Serial.println("Repeat Back " + String(activeBehavior)+ " " + String(panCmd) + " " + String(tiltCmd));  
     // Make sure to check inout bounds
-    if((panCmd >= 0 && panCmd <= 180) && panCmd != 999){
+    if((panCmd >= 5 && panCmd <= 172) && panCmd != 999){
       Pan.write(panCmd);
       //Serial.println("Repeat Back " + String(panCmd));  
     }
@@ -133,7 +134,8 @@ void loop() {
     } 
     newPanTiltCmd = false;
   }  
-
+  
+  /*
   // Pixy Read
   static int i = 0;
   int j;
@@ -162,6 +164,6 @@ void loop() {
       }
     }
   }  
-
+  */
 
 }

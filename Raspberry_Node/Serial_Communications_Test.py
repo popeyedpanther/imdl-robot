@@ -21,22 +21,57 @@ def convertStr(s):
 
 
 # Serial communcations for the Arduino Mega
-arduinoMega = serial.Serial('/dev/ttyACM1', 9600)
+arduinoMega = serial.Serial('/dev/ttyACM0', 9600, timeout = 1, writeTimeout = 2)
 
 # Serial communcations for the Arduino Uno	
-arduinoUno = serial.Serial('/dev/ttyACM2', 9600)
+arduinoUno = serial.Serial('/dev/ttyACM2', 9600, timeout = 1, writeTimeout = 2)
 
+arduinoMega.flushInput()
+arduinoMega.flushOutput()
+
+arduinoUno.flushInput()
+arduinoUno.flushOutput()
+
+arduinoMegaReady = False
+arduinoUnoReady = False
+
+print "Waiting for Arduino Setup"
+
+while True:
+	
+	if not arduinoMegaReady:
+		messageMega = arduinoMega.readline()
+		print messageMega
+		if messageMega == 'r\r\n':
+			while True:
+				arduinoMega.write('s')
+				sleep(0.01)
+				if arduinoMega.readline() == 'g\r\n':
+					break
+			arduinoMegaReady = True
+			print "Mega Done"
+			
+	sleep(0.1)
+	
+	if not arduinoUnoReady:
+		messageUno = arduinoUno.readline()
+		print messageUno
+		if messageUno == 'r\r\n':
+			while True:
+				arduinoUno.write('s')
+				sleep(0.01)
+				if arduinoUno.readline() == 'g\r\n':
+					break
+			arduinoUnoReady = True
+			print "Uno Done"
+		sleep(0.1)
+	
+	if arduinoMegaReady and arduinoUnoReady:
+		break
+		
 b = 10.375
 
 Loop = True
-
-distance = 45
-
-distance = b*distance/2
-
-print "{:.3f}".format(distance)
-
-distance = 0
 
 while Loop:
     print "This is the Main Menu for the Serial Communications Test"
@@ -59,14 +94,14 @@ while Loop:
 
             if choice == '1':
                 print "Input desired distance"
-                amount = convertStr(raw_input())
-                arduinoMega.write('9:' + "{:.2f}".format(-distance) + ':' + "{:.2f}".format(-distance) + ':' +
+                distance = float(raw_input())
+                arduinoMega.write('9:' + "{:.2f}".format(-distance) + ':' + "{:.2f}".format(distance) + ':' +
                                   '999:999:99:9:9:' + '\r')
                 sleep(0.1)
-                print arduinoMega.readline
+                print arduinoMega.readline()
             elif choice == '2':
                 print "Input desired distance"
-                amount = convertStr(raw_input())
+                distance = float(raw_input())
                 arduinoMega.write('9:' + "{:.2f}".format(distance) + ':' + "{:.2f}".format(-distance) + ':' +
                                   '999:999:99:9:9:' + '\r')
                 sleep(0.1)
@@ -84,14 +119,14 @@ while Loop:
                 amount = convertStr(raw_input())
                 distance = b*float(amount)/2
                 arduinoMega.write('9:' + "{:.2f}".format(-distance) + ':' + "{:.2f}".format(-distance) + ':' +
-                                  '999:999:' + '\r')
+                                  '999:999:99:9:9:' + '\r')
                 sleep(0.1)
                 print arduinoMega.readline()
             elif choice == '5':
                 print "Stopped"
                 distance = 0
-                arduinoMega.write('9:' + "{:.2f}".format(-distance) + ':' + "{:.2f}".format(-distance) + ':' +
-                                  '999:999:' + '\r')
+                arduinoMega.write('9:' + "{:.2f}".format(distance) + ':' + "{:.2f}".format(distance) + ':' +
+                                  '999:999:99:9:9:' + '\r')
                 sleep(0.1)
                 print arduinoMega.readline()
             elif choice == 'q' or choice == 'Q':
@@ -157,7 +192,8 @@ while Loop:
 
     elif choice == 'q' or choice == 'Q':
         # Send messages to turn off actuators
-        arduinoMega.write('9:0:0:180:50:'+'\r')
+        arduinoMega.write('9:0:0:180:125:99:9:9:'+'\r')
         arduinoMega.close()
+        arduinoUno.write('9:90:90:' + '\r')
         arduinoUno.close()
         Loop = False
