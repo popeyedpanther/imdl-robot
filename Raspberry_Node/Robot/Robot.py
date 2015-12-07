@@ -16,32 +16,52 @@ class Robot:
         self.behavior = 0                   # Current behavior the robot is in
         self.state = np.array([0, 0, 0])
         # Serial communications for the Arduino Mega
-        self.arduinoMega = serial.Serial(port = '/dev/ttyACM0', baudrate = 9600)
+        self.arduinoMega = serial.Serial(port = '/dev/ttyACM0', baudrate = 9600, timeout = 1, writeTimeout = 2)
 
         # Serial communications for the Arduino Uno
-        self.arduinoUno = serial.Serial(port = '/dev/ttyACM1', baudrate = 9600)
+        self.arduinoUno = serial.Serial(port = '/dev/ttyACM1', baudrate = 9600, timeout = 1, writeTimeout = 2)
+
+        self.arduinoMega.flushInput()
+        self.arduinoMega.flushOutput()
+
+        self.arduinoUno.flushInput()
+        self.arduinoUno.flushOutput()
 
         self.beaconPos = beacons
 
-
     def stateUpdate(self):
         self.arduinoMega.write()
-        message = self.readMega()
+        sleep(0.1)
+        message = self.arduinoMega.readline()
 
         statechange = np.array([float(message[0]), float(message[1]), float(message[2])])
 
         self.state += statechange
 
-    def move(self, Dir, Amount):
+    def updateBehavior(self, behavior):
+        self.behavior = behavior
+        self.arduinoMega.write(str(self.behavior) + ':' + '99:99:999:999:99:9:9:\r')
+        sleep(0.1)
+        self.arduinoUno.write(str(self.behavior) + ':' + '99:99:999:999:99:9:9:\r')  # Update with correct Uno message
 
+    def move(self, Dir, amount):
+        b = 10.375  # inches, distance between wheels
         if Dir == 'L' or Dir == 'l':
-            self.arduinoMega.write("9:2:" + str(Amount) + ":" + "999:999:9")
+            distance = b*float(amount)/2
+            self.arduinoMega.write('9:' + "{:.2f}".format(distance) + ':' + "{:.2f}".format(distance) + ':' +
+                                   '999:999:99:9:9:\r')
         elif Dir == 'R' or Dir == 'r':
-            self.arduinoMega.write("9:3:" + str(Amount) + ":" + "999:999:9")
+            distance = b*float(amount)/2
+            self.arduinoMega.write('9:' + "{:.2f}".format(-distance) + ':' + "{:.2f}".format(-distance) + ':' +
+                                   '999:999:99:9:9:\r')
         elif Dir == 'F' or Dir == 'f':
-            self.arduinoMega.write("9:0:" + str(Amount) + ":" + "999:999:9")
+            distance = float(amount)
+            self.arduinoMega.write('9:' + "{:.2f}".format(-distance) + ':' + "{:.2f}".format(distance) + ':' +
+                                   '999:999:99:9:9:\r')
         elif Dir == 'B' or Dir == 'b':
-            self.arduinoMega.write("9:1:" + str(Amount) + ":" + "999:999:9")
+            distance = float(raw_input())
+            self.arduinoMega.write('9:' + "{:.2f}".format(distance) + ':' + "{:.2f}".format(-distance) + ':' +
+                                   '999:999:99:9:9:\r')
 
     def readMega(self):
         # This method will read the output of the Arduino Mega and parse the information
@@ -56,7 +76,7 @@ class Robot:
         unoMessage = self.arduinoUno.readline()
         messageListUno = unoMessage.split(":")
         return messageListUno
-"""
+    """
     def collectdata(self):
         # This needs to collect data from three out of four beacons.
         # These beacons should have a identifier so their specific absolute position is know.
@@ -65,9 +85,12 @@ class Robot:
         # Pick the first one that is in view.(Object should meet specific geometry conditions)
 
         # Tell both the Mega and Uno what behavior is now acting (Localize)
+        self.updateBehavior(3)
         # Arduino Mega should stop movements and passive while waiting for more commands.
         self.arduinoMega.write()
         self.arduinoUno.write()
+
+
 
 
 
@@ -162,4 +185,29 @@ class Robot:
             thetaR -= 2*pi
 
         return np.array([xR, yR, thetaR])
+"""
+"""
+    def unoSetup(self):
+        # Uno should not return ready unless button is pressed.
+        message = self.arduinoUno.readline()
+
+        if message == "r":
+            ready = True
+            self.arduinoUno.write("s" + "\r")
+        else:
+            ready = False
+
+        return ready
+
+    def megaSetup(self):
+
+        message = self.arduinoMega.readline()
+
+        if message == "r":
+            Ready = True
+            self.arduinoMega.write("s" + "\r")
+        else:
+            Ready = False
+
+        return Ready
 """

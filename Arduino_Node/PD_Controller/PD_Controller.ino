@@ -35,9 +35,9 @@ unsigned long currentMillis;            // Stores the current time reading in mi
 
 // Encoder Counting Variables
 long leftOldPosition;
-long rightOldPosition;
+double rightOldPosition;
 long leftNewPosition = 0;
-long rightNewPosition = 0;
+double rightNewPosition = 0;
 
 // Encoder Conversion Constant
 double C = (3.54*3.14159)/4741.41;
@@ -49,8 +49,8 @@ double rightSetpoint, rightInput, rightOutput;
 boolean leftDone = false, rightDone = false;
 
 // PID Tuning Paramters
-double lKp = 3, lKi = 0, lKd = 3;
-double rKp = 3, rKi = 0, rKd = 3;
+double lKp = 1.75, lKi = 0, lKd = 1.25;
+double rKp = 1.75, rKi = 0, rKd = 1.25;
 
 double K = 10;
 
@@ -62,10 +62,6 @@ rightCurrentPin, 1);
 // Define encoder object
 Encoder leftEncoder(leftEncoderAPin, leftEncoderBPin);
 Encoder rightEncoder(rightEncoderBPin, rightEncoderBPin);
-
-unsigned int timer = 0;
-
-boolean driveStop = false;
 
 /* Define PID object
  *  PID will take the velocity as an input. So the derivative will be calculated be calling the PID function
@@ -79,6 +75,13 @@ unsigned int changespeedsTimer = 0;
 unsigned int changeSpeeds = 10000;
 boolean stopped = false;
 
+unsigned int timer = 0;
+
+boolean driveStop = false;
+
+double stopDist = 23;
+double leftOffset= 0.50, rightOffset = 1.25;
+
 
 
 void setup() {
@@ -90,8 +93,8 @@ void setup() {
   /* Set PID output limits
    *  This limits correspond to the inputs in the VNH5019 Motor Driver setSpeed method.
    */
-  leftPID.SetSampleTime(50);
-  rightPID.SetSampleTime(50); 
+  leftPID.SetSampleTime(10);
+  rightPID.SetSampleTime(10); 
    
   leftPID.SetOutputLimits(-10,10);
   rightPID.SetOutputLimits(-10,10);
@@ -112,9 +115,11 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
+
   
   unsigned int currentTime = millis();
 
+  /*
   if((currentTime - changespeedsTimer) > changeSpeeds){
     changespeedsTimer = currentTime;
     leftSetpoint = 0;
@@ -126,8 +131,8 @@ void loop() {
     }
     
     stopped = true;  
-  }
-  
+  }abs(leftInput)>(stopDist-leftOffset)
+  */
 
   // Need to convert to actual position measurements.
   leftInput = leftEncoder.read()*C; 
@@ -135,22 +140,34 @@ void loop() {
   
   rightInput = rightEncoder.read()*C;
   if(!driveStop){rightDone = rightPID.Compute();}
-
-  /*
-  if(currentTime - timer > 2000){
+  
+  if(abs(leftInput)>(stopDist-leftOffset) && abs(rightInput)>(stopDist-rightOffset) && rightSetpoint != 0){
     Serial.print(leftInput);
     Serial.print(' ');
     Serial.println(rightInput);
-    
+    leftSetpoint = 0;
+    rightSetpoint = 0;
   }
-  */
-
-    if((leftDone && rightDone)){
+  
+  if((leftDone && rightDone)){
       // Set the speeds together
       driveMotors.setSpeeds(K*leftOutput, K*rightOutput);
       leftDone = false;
       rightDone = false;
     }
+    
+  if((currentTime - timer > 200)){
+    timer = currentTime;
+    Serial.print(leftInput);
+    Serial.print(' ');
+    Serial.println(rightInput);
+    rightOldPosition = rightNewPosition;
+    rightNewPosition = rightInput;
+    if(abs(rightNewPosition - rightOldPosition)< 0.0001){
+      Serial.end();
+    }
+    
+  }
   
 
   /*
