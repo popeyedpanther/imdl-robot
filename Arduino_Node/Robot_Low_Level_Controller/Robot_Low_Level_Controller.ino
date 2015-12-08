@@ -65,7 +65,7 @@ const int rightCurrentPin = 3;   // A9, CS2
 const unsigned long irPeriod = 100;      // Sampling period for IR Sensors (ms)
 const unsigned long currentPeriod = 100; // Sampling period for current sensor (ms)
 const unsigned long encoderPeriod = 50;  // Sampling period for encoder sensor (ms)
-const unsigned long serialPeriod = 100;  // Sampling period for serial read (ms)
+const unsigned long serialPeriod = 75;  // Sampling period for serial read (ms)
 const unsigned long stoppedPeriod = 150; // Sampling period for stopped measurement (ms)
 
 
@@ -112,10 +112,10 @@ boolean leftDone = false, rightDone = false;
 double leftOffset = 0.50, rightOffset = 1.25; // Distance offsets to account stopping time.
 
 // PID Tuning Paramters
-double lKp = 1.75, lKi = 0, lKd = 1.25;
-double rKp = 1.75, rKi = 0, rKd = 1.25;
+double lKp = 2.75, lKi = 0, lKd = 2.25;
+double rKp = 3.75, rKi = 0, rKd = 2.25;
 
-double K = 1;
+double K = 5;
 
 // Serial Communications stuff
 double temp = 0;
@@ -132,7 +132,7 @@ Messenger piMessage = Messenger(':');
 
 int wristCmd = 160, graspCmd = 130;
 
-int leftDistance = 0, rightDistance = 0;
+double leftDistance = 0, rightDistance = 0;
 int requestState = 0, requestComplete = 0, oaState = 0;
 boolean oaOverride = false;
 boolean isStopped = true;
@@ -141,7 +141,8 @@ double robotSpeed = 5;
 // State Update Variables
 float dx = 0, dy = 0, dtheta = 0;
 int motionDirection = 0, oldMotionDirection = 0;
-double leftStartPoint, rightStartPoint;
+double leftStartPoint = 0, rightStartPoint = 0;
+double leftStopPoint = 0, rightStopPoint = 0;
 
 
 // Sensor Flags
@@ -195,11 +196,16 @@ void messageParse(){
   // This will set the variables that need to be changed
   // from the message
   if (piMessage.available()){
-    activeBehavior = piMessage.readInt();
-    if (activeBehavior != 9){ newBehavior = true;}
+    temp = piMessage.readInt();
+    if (temp != 9 && temp >= 0 && temp <= 4){
+      newBehavior = true;
+      activeBehavior = temp;  
+    }
     
-    leftDistance = piMessage.readDouble();
-    rightDistance = piMessage.readDouble();
+    temp = piMessage.readDouble();
+    if( temp != 99){leftDistance = temp;}
+    temp = piMessage.readDouble();
+    if( temp != 99){rightDistance = temp;}
     if (leftDistance != 99 || rightDistance != 99){ newDistance = true; }
 
     wristCmd = piMessage.readInt();
@@ -209,8 +215,11 @@ void messageParse(){
     temp = piMessage.readDouble();
     if (temp != 99 && (temp >= 0 && temp < 15)){ robotSpeed = temp; }
 
-    requestState = piMessage.readInt();
-    if (requestState != 9) { newRequest = true;} 
+    temp = piMessage.readInt();
+    if (temp != 9 && temp >= 0 && temp <= 2){ 
+      newRequest = true;
+      requestState = temp;
+    } 
 
     // Repurpose this for some other information
     oaState  = piMessage.readInt();
@@ -301,24 +310,27 @@ void loop()
       // Obstacle avoidance should be off and the robot should not move.
       // Gripper should not move also
       OAoff = true;
+      oaOverride = false;
       gripOff = true;
       }
     else if(activeBehavior == 1){
       // Search/Wander Behavior
       // Obstacle avoidance should be on, should recieve commands from Odroid
       OAoff = false;
-      gripOff = false;
+      gripOff = true;
     }
     else if(activeBehavior == 2){
       // Align and Pickup behavior
       // Obstacle avoidance should be off, should recieve commands fro Odroid
       OAoff = true;
+      oaOverride = false;
       gripOff  = false;
     }
     else if(activeBehavior == 3){
       // Deposit behavior
       // Obstacle avoidance should be on, robot should recieve commands from Odroid
       OAoff = true;
+      oaOverride = false;
       gripOff = false;
     }
     else if(activeBehavior == 4){
@@ -332,6 +344,8 @@ void loop()
 
  if(!gripOff){
   if (newWristGraspCmd){
+    // Debug Print
+    Serial.println(String(activeBehavior) + ' ' + String(wristCmd) + ' ' + String(graspCmd));
     // Makes sure desired angles are acceptable
     if((wristCmd >= 40 && wristCmd <= 170) && wristCmd != 999){
       Wrist.write(wristCmd);
@@ -576,22 +590,7 @@ void loop()
     }
   }
 
-  if((motionDirection != oldMotionDirection || motionDirection == 0) && !isStopped){
-      // Now doing a different motion
-      oldMotionDirection = motionDirection;
-      if(!isStopped){
-        leftSetpoint = 0;
-        rightSetpoint = 0;
 
-        if(abs(currentMillis - previousMillis_Stopped) > stoppedPeriod){
-          if(abs(leftStartPoint - leftEncoder.read()*C) < 0.00001 && abs(rightStartPoint - rightEncoder.read()*C) < 0.00001){
-            isStopped = true;
-          }
-          leftStartPoint = leftInput;
-          rightStartPoint = rightInput;
-        }
-      }
-    }
 
   if(newDistance || oaOverride){
 
@@ -601,6 +600,8 @@ void loop()
         rightStartPoint = rightEncoder.read()*C;
         leftSetpoint = robotSpeed;
         rightSetpoint = robotSpeed;
+        Serial.println("I made it forward");
+        newDistance = false;
         
       }
       else if(isStopped && motionDirection == 2){
@@ -609,6 +610,8 @@ void loop()
         rightStartPoint = rightEncoder.read()*C;
         leftSetpoint = -robotSpeed;
         rightSetpoint = -robotSpeed;
+        Serial.println("I made it reverse");
+        newDistance = false;
         
       }
       else if(isStopped && motionDirection == 3){
@@ -617,6 +620,8 @@ void loop()
         rightStartPoint = rightEncoder.read()*C;
         leftSetpoint = -robotSpeed;
         rightSetpoint = robotSpeed;
+        Serial.println("I made it left");
+        newDistance = false;
         
       }
       else if(isStopped && motionDirection == 4){
@@ -625,10 +630,33 @@ void loop()
         rightStartPoint = rightEncoder.read()*C;
         leftSetpoint = robotSpeed;
         rightSetpoint = -robotSpeed;
+        Serial.println("I made it right");
+        newDistance = false;
         
       }
     }   
 
+  if((motionDirection != oldMotionDirection || motionDirection == 0) && !isStopped){
+      // Now doing a different motion
+      oldMotionDirection = motionDirection;
+      if(!isStopped){
+        leftSetpoint = 0;
+        rightSetpoint = 0;
+
+        if(abs(currentMillis - previousMillis_Stopped) > stoppedPeriod){
+          if(abs(leftStopPoint - leftEncoder.read()*C) < 0.00001 && abs(rightStopPoint - rightEncoder.read()*C) < 0.00001){
+            isStopped = true;
+          }
+          leftStopPoint = leftInput;
+          rightStoptPoint = rightInput;
+        }
+      }
+    }
+  else if((leftInput - leftStartPoint) > (leftDistance-leftOffset) \
+                  && (rightInput - rightStartPoint) > (rightDistance-rightOffset)){
+                    
+                    
+  }
 
   /*
   if((leftInput - leftStartPoint)>(leftDistance-leftOffset) && abs(rightInput)>(rightDistance-rightOffset) && rightSetpoint != 0){

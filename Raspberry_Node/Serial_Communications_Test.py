@@ -98,14 +98,14 @@ while Loop:
                 distance = float(raw_input())
                 arduinoMega.write('9:' + "{:.2f}".format(-distance) + ':' + "{:.2f}".format(distance) + ':' +
                                   '999:999:99:9:9:\r')
-                sleep(0.1)
+                sleep(0.01)
                 print arduinoMega.readline()
             elif choice == '2':
                 print "Input desired distance"
                 distance = float(raw_input())
                 arduinoMega.write('9:' + "{:.2f}".format(distance) + ':' + "{:.2f}".format(-distance) + ':' +
                                   '999:999:99:9:9:\r')
-                sleep(0.1)
+                sleep(0.01)
                 print arduinoMega.readline()
             elif choice == '3':
                 print "Input desired angle"
@@ -113,7 +113,7 @@ while Loop:
                 distance = b*float(amount)/2
                 arduinoMega.write('9:' + "{:.2f}".format(distance) + ':' + "{:.2f}".format(distance) + ':' +
                                   '999:999:99:9:9:\r')
-                sleep(0.1)
+                sleep(0.01)
                 print arduinoMega.readline()
             elif choice == '4':
                 print "Input desired angle"
@@ -121,14 +121,14 @@ while Loop:
                 distance = b*float(amount)/2
                 arduinoMega.write('9:' + "{:.2f}".format(-distance) + ':' + "{:.2f}".format(-distance) + ':' +
                                   '999:999:99:9:9:\r')
-                sleep(0.1)
+                sleep(0.01)
                 print arduinoMega.readline()
             elif choice == '5':
                 print "Stopped"
                 distance = 0
                 arduinoMega.write('9:' + "{:.2f}".format(distance) + ':' + "{:.2f}".format(distance) + ':' +
                                   '999:999:99:9:9:\r')
-                sleep(0.1)
+                sleep(0.01)
                 print arduinoMega.readline()
             elif choice == 'q' or choice == 'Q':
                 break
@@ -145,8 +145,8 @@ while Loop:
                 print "Input wrist angle in degrees (some limits in place"
                 wrist = convertStr(raw_input())
                 if 30 < wrist < 181:
-                    arduinoMega.write('9:99:99:' + str(wrist) + ':999:\r')
-                    sleep(0.1)
+                    arduinoMega.write('9:99:99:' + str(wrist) + ':999:99:9:9:\r')
+                    sleep(0.01)
                     print arduinoMega.readline()
                 else:
                     print "Invalid Input"
@@ -154,8 +154,8 @@ while Loop:
                 print "Input grasp angle in degrees (some limits in place"
                 grasp = convertStr(raw_input())
                 if 45 <= grasp < 135:
-                    arduinoMega.write('9:99:99:999:' + str(grasp) + ':\r')
-                    sleep(0.1)
+                    arduinoMega.write('9:99:99:999:' + str(grasp) + ':99:9:9:\r')
+                    sleep(0.01)
                     print arduinoMega.readline()
                 else:
                     print "Invalid Input"
@@ -199,10 +199,10 @@ while Loop:
             choice = raw_input()
 
             if choice == '1':
-                print "Input pan angle in degrees (some limits in place)"
+                print "1 = Search,  2 = Pickup,  3 = Drop off,  4 = Localize)"
                 behavior = convertStr(raw_input())
                 if 1 <= behavior <= 4:
-                    arduinoMega.write(str(behavior) + ':99:999:999:99:9:9:\r')
+                    arduinoMega.write(str(behavior) + ':99:99:999:999:99:9:9:\r')
                     sleep(0.1)
                     arduinoUno.write(str(behavior) + ':999:999:\r')
                 else:
