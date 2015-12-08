@@ -21,10 +21,10 @@ def convertStr(s):
 
 
 # Serial communcations for the Arduino Mega
-arduinoMega = serial.Serial('/dev/ttyACM0', 9600, timeout = 1, writeTimeout = 2)
+arduinoMega = serial.Serial('/dev/ttyACM1', 9600, timeout = 1, writeTimeout = 2)
 
 # Serial communcations for the Arduino Uno	
-arduinoUno = serial.Serial('/dev/ttyACM2', 9600, timeout = 1, writeTimeout = 2)
+arduinoUno = serial.Serial('/dev/ttyACM0', 9600, timeout = 1, writeTimeout = 2)
 
 arduinoMega.flushInput()
 arduinoMega.flushOutput()
@@ -78,6 +78,7 @@ while Loop:
     print "1. Move a certain amount"
     print "2. Change gripper wrist/claw position"
     print "3. Change pan/tilt angles"
+    print "4. Change robot state"
     print "Q. Quit (Stops all motion)"
     choice = raw_input()
 
@@ -189,11 +190,31 @@ while Loop:
                     print "Invalid Input"
             elif choice == 'q' or choice == 'Q':
                 break
+                
+	elif choice == '4':
+        while True:
+            print "This is the menu for the pan/tilt"
+            print "1. Enter Behavior 1-4"
+            print "Q. GO back"
+            choice = raw_input()
+
+            if choice == '1':
+                print "Input pan angle in degrees (some limits in place)"
+                behavior = convertStr(raw_input())
+                if behavior >= 1 and behavior <= 4:
+                    arduinoMega.write(str(behavior) + ':99:999:999:99:9:9:' + '\r')
+                    sleep(0.1)
+                    arduinoUno.write(str(behavior) + ':999:999:\r')
+                else:
+                    print "Invalid Input"
+            elif choice == 'q' or choice == 'Q':
+                break
+
 
     elif choice == 'q' or choice == 'Q':
         # Send messages to turn off actuators
-        arduinoMega.write('9:0:0:180:125:99:9:9:'+'\r')
+        arduinoMega.write('9:0:0:180:125:99:9:9:\r')
         arduinoMega.close()
-        arduinoUno.write('9:90:90:' + '\r')
+        arduinoUno.write('9:90:90:\r')
         arduinoUno.close()
         Loop = False
