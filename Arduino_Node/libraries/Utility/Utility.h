@@ -30,7 +30,7 @@
 #ifndef UTILITY_H
 #define UTILITY_H
 
-#include <WProgram.h>
+#include <Arduino.h>
 
 template <typename type, typename param1, typename param2, typename mod>
 void foreach(type* pins, byte numberOfPins, void (*function)(param1,param2),mod modifier){
