@@ -43,6 +43,7 @@ class Robot:
         self.arduinoMega.write(str(self.behavior) + ':' + '99:99:999:999:99:9:9:\r')
         sleep(0.1)
         self.arduinoUno.write(str(self.behavior) + ':' + '99:99:999:999:99:9:9:\r')  # Update with correct Uno message
+        sleep(0.1)
 
     def move(self, Dir, amount):
         b = 10.375  # inches, distance between wheels
@@ -85,7 +86,7 @@ class Robot:
         # Pick the first one that is in view.(Object should meet specific geometry conditions)
 
         # Tell both the Mega and Uno what behavior is now acting (Localize)
-        self.updateBehavior(3)
+
         # Arduino Mega should stop movements and passive while waiting for more commands.
         self.arduinoMega.write()
         self.arduinoUno.write()
@@ -127,17 +128,28 @@ class Robot:
 
 
 
-        Statetriang = self.localize(r1, r2, r3, lambdaArray[0], lambdaArray[1], lambdaArray[2])
+         = self.localize(r1, r2, r3, lambdaArray[0], lambdaArray[1], lambdaArray[2])
 
         # Some error checking maybe
 
-        self.state = Statetriang
+        # Should return Data which stores the measured angles
+
+        return Data
 
 
 
 
-    def localize(r1,r2,r3,lambda1,lambda2,lambda3):
+    def localize(self):
+
+        # Update robot current behavior
+        self.updateBehavior(4)
+
+        # Collect data for localizng
+        Angles = self.collectData()
+
         # Perform the calculations
+
+
         # Convert degrees into radians
         lambda1 = radians(lambda1)
         lambda2 = radians(lambda2)
@@ -184,7 +196,8 @@ class Robot:
         elif thetaR>pi:
             thetaR -= 2*pi
 
-        return np.array([xR, yR, thetaR])
+        stateTriang =  np.array([xR, yR, thetaR])
+        self.state = stateTriang
 """
 """
     def unoSetup(self):

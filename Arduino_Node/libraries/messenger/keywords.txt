@@ -15,6 +15,7 @@ Messenger	KEYWORD1
 process	KEYWORD2
 readInt	KEYWORD2
 readLong	KEYWORD2
+readDouble	KEYWORD2
 readChar	KEYWORD2
 copyString	KEYWORD2
 checkString	KEYWORD2

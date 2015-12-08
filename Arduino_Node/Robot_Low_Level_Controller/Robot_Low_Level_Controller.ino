@@ -64,15 +64,18 @@ const int rightCurrentPin = 3;   // A9, CS2
 // ---Sensor sampling periods---
 const unsigned long irPeriod = 100;      // Sampling period for IR Sensors (ms)
 const unsigned long currentPeriod = 100; // Sampling period for current sensor (ms)
-const unsigned long encoderPeriod = 50;  // Sampling period for encodert sensor (ms)
-const unsigned long serialPeriod = 100;  // Sampling period for encodert sensor (ms)
+const unsigned long encoderPeriod = 50;  // Sampling period for encoder sensor (ms)
+const unsigned long serialPeriod = 100;  // Sampling period for serial read (ms)
+const unsigned long stoppedPeriod = 150; // Sampling period for stopped measurement (ms)
+
 
 // Used for sensor sampling times
 unsigned long currentMillis;            // Stores the current time reading in milliseconds
 unsigned long previousMillis_IR=0;      // Stores the previous time the IR sensors were read
 unsigned long previousMillis_Current=0; // Stores the previous time the Current sensors were read
 unsigned long previousMillis_Encoder=0; // Stores the previous time the encoder were read
-unsigned long previousMillis_Serial=0;   // Stores the previous time the encoder were read
+unsigned long previousMillis_Serial=0;  // Stores the previous time the serial weas read
+unsigned long previousMillis_Stopped=0; // Stores the previous time if the robot was stopped
 
 // ---Constants---
 const int eps = 0.75;
@@ -106,17 +109,16 @@ double leftSetpoint, leftInput, leftOutput;
 double rightSetpoint, rightInput, rightOutput;
 
 boolean leftDone = false, rightDone = false;
-
-
 double leftOffset = 0.50, rightOffset = 1.25; // Distance offsets to account stopping time.
 
 // PID Tuning Paramters
 double lKp = 1.75, lKi = 0, lKd = 1.25;
 double rKp = 1.75, rKi = 0, rKd = 1.25;
 
-double K = 10;
+double K = 1;
 
 // Serial Communications stuff
+double temp = 0;
 boolean newBehavior = false;
 boolean newDistance = false;   // Signifies if a new command has been recieved           
 boolean newWristGraspCmd = false;   // Signifies if a new command has been recieved
@@ -131,12 +133,14 @@ Messenger piMessage = Messenger(':');
 int wristCmd = 160, graspCmd = 130;
 
 int leftDistance = 0, rightDistance = 0;
-int requestState = 0, requestComplete = 0, oaOveride = 0, oaState = 0;
+int requestState = 0, requestComplete = 0, oaState = 0;
+boolean oaOverride = false;
+boolean isStopped = true;
 double robotSpeed = 5;
 
 // State Update Variables
 float dx = 0, dy = 0, dtheta = 0;
-int motionDirection = 0;
+int motionDirection = 0, oldMotionDirection = 0;
 double leftStartPoint, rightStartPoint;
 
 
@@ -155,7 +159,7 @@ boolean actionLock = false;
 boolean actionOverride = false;
 unsigned long timerLockout = 750;
 unsigned long actionTimer =0;
-boolean Done = false;
+boolean Reverse = false;
 boolean Turn = false;
 
 //----Define Objects-----
@@ -194,20 +198,21 @@ void messageParse(){
     activeBehavior = piMessage.readInt();
     if (activeBehavior != 9){ newBehavior = true;}
     
-    leftDistance = piMessage.readInt();
-    rightDistance = piMessage.readInt();
+    leftDistance = piMessage.readDouble();
+    rightDistance = piMessage.readDouble();
     if (leftDistance != 99 || rightDistance != 99){ newDistance = true; }
 
     wristCmd = piMessage.readInt();
     graspCmd = piMessage.readInt();  
     if (wristCmd != 999 || graspCmd != 999){ newWristGraspCmd = true;}
       
-    robotSpeed = piMessage.readInt();
-    if (robotSpeed != 99){ newRobotSpeed = true; }
+    temp = piMessage.readDouble();
+    if (temp != 99 && (temp >= 0 && temp < 15)){ robotSpeed = temp; }
 
     requestState = piMessage.readInt();
     if (requestState != 9) { newRequest = true;} 
 
+    // Repurpose this for some other information
     oaState  = piMessage.readInt();
     if ( oaState == 0 ) {OAoff = true;}
   }  
@@ -246,8 +251,8 @@ void setup()  // Needs to stay in setup until all necessary communications can b
   leftPID.SetSampleTime(50);
   rightPID.SetSampleTime(50); 
    
-  leftPID.SetOutputLimits(-10,10);
-  rightPID.SetOutputLimits(-10,10);
+  leftPID.SetOutputLimits(-100,100);
+  rightPID.SetOutputLimits(-100,100);
 
   leftPID.SetMode(AUTOMATIC);
   rightPID.SetMode(AUTOMATIC);
@@ -261,14 +266,9 @@ void setup()  // Needs to stay in setup until all necessary communications can b
 
   while(1){
     // Set readyBypass to true to skip waiting for Odroid confirmation and button switch confimation
-    if (readyBypass){
-      break;
-    }
+    if (readyBypass){break;}
     
-    if (Serial.available() > 0){
-      inByte = Serial.read();
-    }
-    
+    if (Serial.available() > 0){ inByte = Serial.read();}
     
     if (inByte == 115){
         Serial.println('g');
@@ -307,16 +307,19 @@ void loop()
       // Search/Wander Behavior
       // Obstacle avoidance should be on, should recieve commands from Odroid
       OAoff = false;
+      gripOff = false;
     }
     else if(activeBehavior == 2){
       // Align and Pickup behavior
       // Obstacle avoidance should be off, should recieve commands fro Odroid
       OAoff = true;
+      gripOff  = false;
     }
     else if(activeBehavior == 3){
       // Deposit behavior
       // Obstacle avoidance should be on, robot should recieve commands from Odroid
-      OAoff = false;
+      OAoff = true;
+      gripOff = false;
     }
     else if(activeBehavior == 4){
       // Localize bahvior
@@ -338,12 +341,6 @@ void loop()
     } 
     newWristGraspCmd = false;
   }  
-
-  if (newRobotSpeed){
-    leftSetpoint = robotSpeed;
-    rightSetpoint = robotSpeed;
-    newRobotSpeed = false;
-  }
  }
   currentMillis = millis(); // Program run time in milliseconds. Used for sensor sampling.
 
@@ -397,14 +394,19 @@ void loop()
     }
     else if((irRightAvg-irLeftAvg)< eps && (irLeftAvg >= 3.5 && irLeftAvg < 5.5)\
           && (irRightAvg >= 3.5 && irRightAvg < 5.5)) {
-    
-      irRecomnd = 1;  // Turn left or right
+      // Turn left or right
+      if(random(0,9)/5 == 1){
+        irRecomnd = 1;
+      }
+      else{
+        irRecomnd = 2;
+      }  
     }
     else if(irLeftAvg >= 3.5 && irLeftAvg < 5.5 && irRightAvg > 5.5){
-      irRecomnd = 2;  // Turn right some random amount
+      irRecomnd = 1;  // Turn right some random amount
     }
     else if(irRightAvg >= 3.5 && irRightAvg < 5.5 && irLeftAvg > 5.5){
-      irRecomnd = 3;  // Turn left some random amount
+      irRecomnd = 2;  // Turn left some random amount
     }
     else{
       irRecomnd = 0;
@@ -460,6 +462,7 @@ void loop()
     // If the current sensor recommends something then set the flag to true
     if(currentRecomnd != 0){
       currentFlag = true;
+      actionOverride = true;
     }
     else{ 
       currentFlag = false;
@@ -475,22 +478,31 @@ void loop()
   }
 //--------------------------------------------------------------------------------------------------------------
   
-  if(!OAoff){  
-    if((currentMillis - actionTimer) >= random(750,1750) || actionOverride){     
-       actionLock = false;
-       actionOverride = false;
-    }
-         
-    // Driving will be done here
+  if(!OAoff){          
     // Any sensor flag will trigger alternative behavior
     if (currentFlag || bumpFlag || irFlag) {
-      oaOveride = 1;
+      oaOverride = true;
       if (currentRecomnd == 1) {
       // Stop motion, robot could be stuck.
-      leftSetpoint = 0; rightSetpoint = 0; 
+      Reverse = false;
+      Turn = false;
+      motionDirection = 0;
+      currentFlag = false;
       }
       else if(bumpRecomnd == 3){
-        // Reverse motion
+        // Reverse and right turn motion
+        Reverse = true;
+        Turn = true;
+        motionDirection = 4;
+        bumpFlag = false;
+      } 
+      else if(bumpRecomnd == 4){
+        // Reverse and left turn motion
+        Reverse = true;
+        Turn = true;
+        motionDirection= 3;
+        bumpFlag = false;
+        /*
         if(!actionLock){
           actionLock = true;
           driveMotors.setM1Speed(-75);
@@ -498,79 +510,128 @@ void loop()
           actionTimer =  currentMillis;
           bumpRecomnd = 0;
         }
+        */
       } 
-      else if(bumpRecomnd == 4){
-        // Reverse motion
-        if(!actionLock){
-          actionLock = true;
-          driveMotors.setM1Speed(-75);
-          driveMotors.setM2Speed(75);
-          actionTimer =  currentMillis;
-          bumpRecomnd = 0;
-        }                                      
+      else if(irRecomnd == 1){
+        // Turn Right
+        Reverse = false;
+        Turn = true;
+        motionDirection = 4;                                      
       }
-    }
-    else{ // This branch is for normal operations
-      // Forward motion
-      if(!actionLock){
-      leftSetpoint = robotSpeed;
-      rightSetpoint = robotSpeed;
+      else if(irRecomnd == 2){
+        // Turn left
+        Reverse = false;
+        Turn = true;
+        motionDirection = 3;   
       }
     }
   }
 
-//---- Obstacle Avoidance Action ----
-if(!Done){
-  // perform action
-  if(Turn){
-    // Perform Turn
+  //---- Obstacle Avoidance Action ----
+   
+  if(Reverse && isStopped){
+    // perform action
+    motionDirection = 2;
   }
-
-  
-}
-
-//---- State Update ----
-  if(newDistance){
-    leftStartPoint = leftInput;
-    rightStartPoint = rightInput;
     
+  if(Turn && !Reverse && isStopped){
+      // Perform Turn
+  
+      // Which way to turn?
+      if(motionDirection == 3){
+        // Turn Left
+  
+          Turn = false;
+          motionDirection = 0;
+          oaOverride = false;
+      }
+      else if(motionDirection == 4){
+        // Turn Right
+  
+        motionDirection = 0;
+      }
+  }
+
+  //---- Commanded Robot Move ----
+  if(newDistance && !oaOverride){   
     if( leftDistance < 0 && rightDistance > 0){
       //Forward motion
       motionDirection = 1;
-      leftSetpoint = robotSpeed;
-      rightSetpoint = robotSpeed;
     }
     else if(leftDistance > 0 && rightDistance < 0){
       // Reverse Motion
       motionDirection = 2;
-      leftSetpoint = -robotSpeed;
-      rightSetpoint = -robotSpeed;
     }
     else if(leftDistance > 0 && rightDistance > 0){
       // Turning Left
       motionDirection = 3;
-      leftSetpoint = -robotSpeed;
-      rightSetpoint = robotSpeed;
     }
     else if(leftDistance < 0 && rightDistance < 0){
       // Turning Right
       motionDirection = 4;
-      leftSetpoint = robotSpeed;
-      rightSetpoint = -robotSpeed;
     }
     else{
       //Stop
       motionDirection = 0;
-      leftSetpoint = 0;
-      rightSetpoint = 0;
     }
   }
 
+  if((motionDirection != oldMotionDirection || motionDirection == 0) && !isStopped){
+      // Now doing a different motion
+      oldMotionDirection = motionDirection;
+      if(!isStopped){
+        leftSetpoint = 0;
+        rightSetpoint = 0;
+
+        if(abs(currentMillis - previousMillis_Stopped) > stoppedPeriod){
+          if(abs(leftStartPoint - leftEncoder.read()*C) < 0.00001 && abs(rightStartPoint - rightEncoder.read()*C) < 0.00001){
+            isStopped = true;
+          }
+          leftStartPoint = leftInput;
+          rightStartPoint = rightInput;
+        }
+      }
+    }
+
+  if(newDistance || oaOverride){
+
+      if(isStopped && motionDirection == 1){
+        // Forward Motion
+        leftStartPoint = leftEncoder.read()*C;
+        rightStartPoint = rightEncoder.read()*C;
+        leftSetpoint = robotSpeed;
+        rightSetpoint = robotSpeed;
+        
+      }
+      else if(isStopped && motionDirection == 2){
+        // Reverse Motion
+        leftStartPoint = leftEncoder.read()*C;
+        rightStartPoint = rightEncoder.read()*C;
+        leftSetpoint = -robotSpeed;
+        rightSetpoint = -robotSpeed;
+        
+      }
+      else if(isStopped && motionDirection == 3){
+        // Left Turn
+        leftStartPoint = leftEncoder.read()*C;
+        rightStartPoint = rightEncoder.read()*C;
+        leftSetpoint = -robotSpeed;
+        rightSetpoint = robotSpeed;
+        
+      }
+      else if(isStopped && motionDirection == 4){
+        // Right Turn
+        leftStartPoint = leftEncoder.read()*C;
+        rightStartPoint = rightEncoder.read()*C;
+        leftSetpoint = robotSpeed;
+        rightSetpoint = -robotSpeed;
+        
+      }
+    }   
+
+
   /*
   if((leftInput - leftStartPoint)>(leftDistance-leftOffset) && abs(rightInput)>(rightDistance-rightOffset) && rightSetpoint != 0){
-    Serial.print(leftInput);
-    Serial.print(' ');
-    Serial.println(rightInput);
     leftSetpoint = 0;
     rightSetpoint = 0;
   }
@@ -583,15 +644,6 @@ if(!Done){
   
   rightInput = rightEncoder.read()*C;
   rightDone = rightPID.Compute();
-
-  /*
-  if(currentTime - timer > 2000){
-    Serial.print(leftInput);
-    Serial.print(' ');
-    Serial.println(rightInput);
-    
-  }
-  */
 
   if(leftDone && rightDone){
     // Set the speeds together
