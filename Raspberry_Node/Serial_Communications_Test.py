@@ -97,14 +97,14 @@ while Loop:
                 print "Input desired distance"
                 distance = float(raw_input())
                 arduinoMega.write('9:' + "{:.2f}".format(-distance) + ':' + "{:.2f}".format(distance) + ':' +
-                                  '999:999:99:9:9:' + '\r')
+                                  '999:999:99:9:9:\r')
                 sleep(0.1)
                 print arduinoMega.readline()
             elif choice == '2':
                 print "Input desired distance"
                 distance = float(raw_input())
                 arduinoMega.write('9:' + "{:.2f}".format(distance) + ':' + "{:.2f}".format(-distance) + ':' +
-                                  '999:999:99:9:9:' + '\r')
+                                  '999:999:99:9:9:\r')
                 sleep(0.1)
                 print arduinoMega.readline()
             elif choice == '3':
@@ -112,7 +112,7 @@ while Loop:
                 amount = convertStr(raw_input())
                 distance = b*float(amount)/2
                 arduinoMega.write('9:' + "{:.2f}".format(distance) + ':' + "{:.2f}".format(distance) + ':' +
-                                  '999:999:99:9:9:' + '\r')
+                                  '999:999:99:9:9:\r')
                 sleep(0.1)
                 print arduinoMega.readline()
             elif choice == '4':
@@ -120,14 +120,14 @@ while Loop:
                 amount = convertStr(raw_input())
                 distance = b*float(amount)/2
                 arduinoMega.write('9:' + "{:.2f}".format(-distance) + ':' + "{:.2f}".format(-distance) + ':' +
-                                  '999:999:99:9:9:' + '\r')
+                                  '999:999:99:9:9:\r')
                 sleep(0.1)
                 print arduinoMega.readline()
             elif choice == '5':
                 print "Stopped"
                 distance = 0
                 arduinoMega.write('9:' + "{:.2f}".format(distance) + ':' + "{:.2f}".format(distance) + ':' +
-                                  '999:999:99:9:9:' + '\r')
+                                  '999:999:99:9:9:\r')
                 sleep(0.1)
                 print arduinoMega.readline()
             elif choice == 'q' or choice == 'Q':
@@ -144,8 +144,8 @@ while Loop:
             if choice == '1':
                 print "Input wrist angle in degrees (some limits in place"
                 wrist = convertStr(raw_input())
-                if wrist < 181 and wrist > 30:
-                    arduinoMega.write('9:99:99:'+ str(wrist)+':'+'999:'+'\r')
+                if 30 < wrist < 181:
+                    arduinoMega.write('9:99:99:' + str(wrist) + ':999:\r')
                     sleep(0.1)
                     print arduinoMega.readline()
                 else:
@@ -153,8 +153,8 @@ while Loop:
             elif choice == '2':
                 print "Input grasp angle in degrees (some limits in place"
                 grasp = convertStr(raw_input())
-                if grasp < 135 and grasp >= 45:
-                    arduinoMega.write('9:99:99:999:'+ str(grasp)+':'+'\r')
+                if 45 <= grasp < 135:
+                    arduinoMega.write('9:99:99:999:' + str(grasp) + ':\r')
                     sleep(0.1)
                     print arduinoMega.readline()
                 else:
@@ -173,8 +173,8 @@ while Loop:
             if choice == '1':
                 print "Input pan angle in degrees (some limits in place)"
                 pan = convertStr(raw_input())
-                if pan <= 180 and pan >=0:
-                    arduinoUno.write('9:'+ str(pan)+':'+'999:'+'\r')
+                if 0 <=  pan <= 180:
+                    arduinoUno.write('9:'+ str(pan) + ':999:\r')
                     sleep(0.1)
                     print arduinoUno.readline()
                 else:
@@ -182,16 +182,16 @@ while Loop:
             elif choice == '2':
                 print "Input tilt angle in degrees (some limits in place)"
                 tilt = convertStr(raw_input())
-                if tilt < 130 and tilt > 80:
-                    arduinoUno.write('9:'+ '999:' +str(tilt) +':' +'\r')
+                if 80 < tilt < 130:
+                    arduinoUno.write('9:999:' + str(tilt) + ':\r')
                     sleep(0.1)
                     print arduinoUno.readline()
                 else:
                     print "Invalid Input"
             elif choice == 'q' or choice == 'Q':
                 break
-                
-	elif choice == '4':
+
+    elif choice == '4':
         while True:
             print "This is the menu for the pan/tilt"
             print "1. Enter Behavior 1-4"
@@ -201,15 +201,14 @@ while Loop:
             if choice == '1':
                 print "Input pan angle in degrees (some limits in place)"
                 behavior = convertStr(raw_input())
-                if behavior >= 1 and behavior <= 4:
-                    arduinoMega.write(str(behavior) + ':99:999:999:99:9:9:' + '\r')
+                if 1 <= behavior <= 4:
+                    arduinoMega.write(str(behavior) + ':99:999:999:99:9:9:\r')
                     sleep(0.1)
                     arduinoUno.write(str(behavior) + ':999:999:\r')
                 else:
                     print "Invalid Input"
             elif choice == 'q' or choice == 'Q':
                 break
-
 
     elif choice == 'q' or choice == 'Q':
         # Send messages to turn off actuators
