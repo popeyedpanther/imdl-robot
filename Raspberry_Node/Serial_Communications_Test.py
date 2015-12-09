@@ -22,10 +22,10 @@ def convertStr(s):
 
 
 # Serial communications for the Arduino Mega
-arduinoMega = serial.Serial('/dev/ttyACM1', 9600, timeout = 1, writeTimeout = 2)
+arduinoMega = serial.Serial('/dev/ttyACM1', 9600, timeout = 3, writeTimeout = 3)
 
 # Serial communications for the Arduino Uno
-arduinoUno = serial.Serial('/dev/ttyACM0', 9600, timeout = 1, writeTimeout = 2)
+arduinoUno = serial.Serial('/dev/ttyACM0', 9600, timeout = 3, writeTimeout = 3)
 
 # Reset Mega
 arduinoMega.setDTR(level=False)
@@ -55,40 +55,6 @@ print 'Uno Handshake: ' + str(struct.unpack("B", arduinoUno.read())[0])
 arduinoUno.flushInput()
 arduinoUno.write('s')
 
-"""
-while True:
-
-    if not arduinoMegaReady:
-        messageMega = arduinoMega.readline()
-        print messageMega
-        if messageMega == 'r\r\n':
-            while True:
-                arduinoMega.write('s')
-                sleep(0.02)
-                if arduinoMega.readline() == 'g\r\n':
-                    break
-            arduinoMegaReady = True
-            print "Mega Done"
-
-    sleep(0.1)
-
-    if not arduinoUnoReady:
-        messageUno = arduinoUno.readline()
-        print messageUno
-        if messageUno == 'r\r\n':
-            while True:
-                arduinoUno.write('s')
-                sleep(0.02)
-                if arduinoUno.readline() == 'g\r\n':
-                    break
-            arduinoUnoReady = True
-            print "Uno Done"
-        sleep(0.1)
-
-    if arduinoMegaReady and arduinoUnoReady:
-        break
-"""
-
 b = 10.375
 
 Loop = True
@@ -117,6 +83,7 @@ while Loop:
             if choice == '1':
                 print "Input desired distance"
                 distance = float(raw_input())
+                arduinoMega.flushInput()
                 arduinoMega.write('9:' + "{:.2f}".format(-distance) + ':' + "{:.2f}".format(distance) + ':' +
                                   '999:999:99:9:9:\r')
                 sleep(0.01)

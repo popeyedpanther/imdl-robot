@@ -4,7 +4,7 @@ void updateBehavior(){
       // Robot should be inactive
       // Obstacle avoidance should be off and the robot should not move.
       // Gripper should not move also
-      OAoff = false;
+      OAoff = true;
       OAOverride = false;
       gripOff = true;
       }

@@ -85,7 +85,7 @@ void setup() {
   // Start serial and wait for the "Go" command
   Serial.begin(9600);
   piMessage.attach(messageParse);
-  elay(50);
+  delay(50);
 
   while( !Serial.available()){
     Serial.write('r');

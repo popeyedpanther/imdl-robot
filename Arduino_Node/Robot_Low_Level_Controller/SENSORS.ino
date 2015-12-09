@@ -73,9 +73,9 @@ void updateIR(){
   }
 
   // Debugging outputs
-    Serial.print(irLeftAvg);
-    Serial.print("  ");
-    Serial.println(irRightAvg);  
+    //Serial.print(irLeftAvg);
+    //Serial.print("  ");
+    //Serial.println(irRightAvg);  
 
 }
 //----------------------------------------------------------------------------------------------------------------------------//
