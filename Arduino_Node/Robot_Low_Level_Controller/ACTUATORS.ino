@@ -18,9 +18,57 @@ void updateGripper(){
 //----------------------------------------------------------------------------------------------------------------------------//
 //----------------------------------------------------------------------------------------------------------------------------//
 
-void PDController(){
-// PD controller
-// Need to convert to actual position measurements.
+void motorController(){
+
+  if(newDistance || OAOverride){
+
+    if(isStopped && motionDirection == 1){
+      // Forward Motion
+      leftStartPoint = leftEncoder.read()*C;
+      rightStartPoint = rightEncoder.read()*C;
+      leftSetpoint = robotSpeed;
+      rightSetpoint = robotSpeed;
+      isStopped = false;
+      Serial.println("I made it forward");
+      newDistance = false;
+      
+    }
+    else if(isStopped && motionDirection == 2){
+      // Reverse Motion
+      leftStartPoint = leftEncoder.read()*C;
+      rightStartPoint = rightEncoder.read()*C;
+      leftSetpoint = -robotSpeed;
+      rightSetpoint = -robotSpeed;
+      isStopped = false;
+      Serial.println("I made it reverse");
+      newDistance = false;
+      
+    }
+    else if(isStopped && motionDirection == 3){
+      // Left Turn
+      leftStartPoint = leftEncoder.read()*C;
+      rightStartPoint = rightEncoder.read()*C;
+      leftSetpoint = -robotSpeed;
+      rightSetpoint = robotSpeed;
+      isStopped = false;
+      Serial.println("I made it left");
+      newDistance = false;
+      
+    }
+    else if(isStopped && motionDirection == 4){
+      // Right Turn
+      leftStartPoint = leftEncoder.read()*C;
+      rightStartPoint = rightEncoder.read()*C;
+      leftSetpoint = robotSpeed;
+      rightSetpoint = -robotSpeed;
+      isStopped = false;
+      Serial.println("I made it right");
+      newDistance = false;
+      
+    }
+  }   
+  // PD controller
+  // Need to convert to actual position measurements.
   leftInput = leftEncoder.read()*C; 
   leftDone = leftPID.Compute();
   

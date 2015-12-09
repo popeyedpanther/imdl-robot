@@ -131,22 +131,24 @@ Messenger piMessage = Messenger(':');
 int wristCmd = 160, graspCmd = 130;
 
 double leftDistance = 0, rightDistance = 0;
-int requestState = 0, requestComplete = 0, oaState = 0;
+int requestState = 0, requestComplete = 0, OAState = 0;
 
 double robotSpeed = 5;
 
 // Arbiter Variables
 boolean OAOverride = false, OADone = true;            // Did a recommended OA motion finish?
-int turnDirection = 0;
+int turnDirection = 0, motionDirection = 0;
 unsigned long OATimer = 0;
 boolean Reverse = false;
 boolean Turn = false;
 
 // State Update Variables/ Dead Reckoning
 float dx = 0, dy = 0, dtheta = 0;
-int motionDirection = 0, oldMotionDirection = 0;
+float leftWheelChange = 0, rightWheelChange = 0;
+float b = 10.375; // inches (distance between wheel centers)
 double leftStartPoint = 0, rightStartPoint = 0;
 double leftStopPoint = 0, rightStopPoint = 0;
+int oldMotionDirection = 0;
 boolean isStopped = true;
 
 
@@ -222,8 +224,8 @@ void messageParse(){
     } 
 
     // Repurpose this for some other information
-    oaState  = piMessage.readInt();
-    if ( oaState == 0 ) {OAoff = true;}
+    OAState  = piMessage.readInt();
+    if (OAState == 0 ) {OAoff = true;}
   }  
 }
 
@@ -339,92 +341,18 @@ void loop()
 
 //---------------------------------------------Dead Reckoning---------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------
-
-  if((motionDirection != oldMotionDirection || motionDirection == 0) && !isStopped){
-      // Now doing a different motion
-      oldMotionDirection = motionDirection;
-      if(!isStopped){
-        leftSetpoint = 0;
-        rightSetpoint = 0;
-
-        if(abs(currentMillis - previousMillis_Stopped) > stoppedPeriod){
-          if(abs(leftStopPoint - leftEncoder.read()*C) < 0.00001 && abs(rightStopPoint - rightEncoder.read()*C) < 0.00001){
-            isStopped = true;
-          }
-          leftStopPoint = leftInput;
-          rightStopPoint = rightInput;
-        }
-      }
-    }
-  else if((leftInput - leftStartPoint) > (leftDistance-leftOffset) \
-                  && (rightInput - rightStartPoint) > (rightDistance-rightOffset)){
-                    
-
+  deadReckoning();
 
 //---------------------------------------------Motor Controller-------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------
-
-
-  if(newDistance || OAOverride){
-
-      if(isStopped && motionDirection == 1){
-        // Forward Motion
-        leftStartPoint = leftEncoder.read()*C;
-        rightStartPoint = rightEncoder.read()*C;
-        leftSetpoint = robotSpeed;
-        rightSetpoint = robotSpeed;
-        Serial.println("I made it forward");
-        newDistance = false;
-        
-      }
-      else if(isStopped && motionDirection == 2){
-        // Reverse Motion
-        leftStartPoint = leftEncoder.read()*C;
-        rightStartPoint = rightEncoder.read()*C;
-        leftSetpoint = -robotSpeed;
-        rightSetpoint = -robotSpeed;
-        Serial.println("I made it reverse");
-        newDistance = false;
-        
-      }
-      else if(isStopped && motionDirection == 3){
-        // Left Turn
-        leftStartPoint = leftEncoder.read()*C;
-        rightStartPoint = rightEncoder.read()*C;
-        leftSetpoint = -robotSpeed;
-        rightSetpoint = robotSpeed;
-        Serial.println("I made it left");
-        newDistance = false;
-        
-      }
-      else if(isStopped && motionDirection == 4){
-        // Right Turn
-        leftStartPoint = leftEncoder.read()*C;
-        rightStartPoint = rightEncoder.read()*C;
-        leftSetpoint = robotSpeed;
-        rightSetpoint = -robotSpeed;
-        Serial.println("I made it right");
-        newDistance = false;
-        
-      }
-    }   
-
-
-                    
-  }
-
-  /*
-  if((leftInput - leftStartPoint)>(leftDistance-leftOffset) && abs(rightInput)>(rightDistance-rightOffset) && rightSetpoint != 0){
-    leftSetpoint = 0;
-    rightSetpoint = 0;
-  }
-  */
-
+      
   // Perform PD controller update
-  PDController();   // Actuator TAB
+  motorController();   // Actuator TAB
+
+
+//-------------------------------------------Serial Send Update-------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------
+
 }
-
-
-  
 //----------------------------------------------------------------------------------------------------------------------------//
 //----------------------------------------------------------------------------------------------------------------------------//
