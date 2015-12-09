@@ -119,7 +119,8 @@ void updateCurrent(){
   }
   
   // Debug variable declaration
-  //currentFlag = false;
+  currentFlag = false;
+  currentRecomnd = 0;
 
   /* Debugging Outputs
     Serial.print("Left Current: " + String(currentLeftAvg) + " " );

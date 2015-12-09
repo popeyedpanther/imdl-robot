@@ -17,7 +17,7 @@
 #include <Encoder.h>                  // Used for dead reckoning and feedback for PD control
 #include <PID_v1.h>                   // Used to perform PD control on motors
 #include <Messenger.h>                // Used to parse serial communications
-#include <Utility.h>                  // Just for the sign function
+//#include <Utility.h>                  // Just for the sign function
 
 
 //-------Define variables here-------------------------------

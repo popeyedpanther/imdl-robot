@@ -28,9 +28,8 @@ void deadReckoning(){
         }
      }
    }
-  
-
-
-  
+   else if(isStopped){
+     oldMotionDirection = motionDirection;
+   }
 }
 
