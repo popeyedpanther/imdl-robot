@@ -21,7 +21,7 @@ def convertStr(s):
 
 
 # Serial communcations for the Arduino Mega
-arduinoMega = serial.Serial('/dev/ttyACM2', 9600, timeout = 1, writeTimeout = 2)
+arduinoMega = serial.Serial('/dev/ttyACM1', 9600, timeout = 1, writeTimeout = 2)
 
 # Serial communcations for the Arduino Uno	
 arduinoUno = serial.Serial('/dev/ttyACM0', 9600, timeout = 1, writeTimeout = 2)
@@ -145,7 +145,8 @@ while Loop:
             if choice == '1':
                 print "Input wrist angle in degrees (some limits in place"
                 wrist = convertStr(raw_input())
-                if 30 < wrist < 181:
+                if 30 < wrist < 175:
+                    arduinoMega.flushInput()
                     arduinoMega.write('9:0:0:' + str(wrist) + ':999:99:9:9:\r')
                     sleep(0.01)
                     print arduinoMega.readline()
@@ -155,6 +156,7 @@ while Loop:
                 print "Input grasp angle in degrees (some limits in place"
                 grasp = convertStr(raw_input())
                 if 45 <= grasp < 135:
+                    arduinoMega.flushInput()
                     arduinoMega.write('9:0:0:999:' + str(grasp) + ':99:9:9:\r')
                     sleep(0.01)
                     print arduinoMega.readline()
@@ -219,7 +221,7 @@ while Loop:
             sleep(0.1)
             message = arduinoMega.readline().split(':')
             sleep(0.1)
-            arduinoMega.write('9:0:0:999:999:99:0:9:\r')               
+            arduinoMega.write('9:0:0:999:999:99:9:9:\r')               
             print message
 
             #print message[0] + ' ' + message[1] + ' ' + message[2]
