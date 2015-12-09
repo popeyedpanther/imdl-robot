@@ -85,7 +85,16 @@ void setup() {
   // Start serial and wait for the "Go" command
   Serial.begin(9600);
   piMessage.attach(messageParse);
-  
+  elay(50);
+
+  while( !Serial.available()){
+    Serial.write('r');
+    delay(300);
+  }
+
+  Serial.read();
+
+  /*
   // Stay in a loop until read to move on
   while(1){
     // Set readyBypass to true to skip waiting for Odroid confirmation and button switch confimation
@@ -107,6 +116,7 @@ void setup() {
 
     delay(100);
   }
+  */
 }
   
 void loop() {

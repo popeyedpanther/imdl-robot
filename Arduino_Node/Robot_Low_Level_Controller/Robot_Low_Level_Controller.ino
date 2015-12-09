@@ -279,7 +279,16 @@ void setup()  // Needs to stay in setup until all necessary communications can b
   // Initiliaze serial communications
   Serial.begin(9600);           // set up Serial library at 9600 bps  boolean readyBypass = true;
   piMessage.attach(messageParse); 
+  delay(50);
 
+  while( !Serial.available()){
+    Serial.write('r');
+    delay(300);
+  }
+
+  Serial.read();
+  
+  /*
   while(1){
     // Set readyBypass to true to skip waiting for Odroid confirmation and button switch confimation
     if (readyBypass){break;}
@@ -295,6 +304,7 @@ void setup()  // Needs to stay in setup until all necessary communications can b
 
     delay(100);
   }
+  */
 }
 
 //--------------------------------------------------------Main Loop-----------------------------------------------------------//

@@ -4,6 +4,7 @@ from math import *					# Standard math library
 # from libpixyusb_swig.pixy import *	# Python wrapper for C++ Pixy CMUcam5 library
 # from ctypes import *
 import serial						# Library for communicating over serial
+import struct
 import numpy as np					# Matrix math library
 from time import clock, sleep		# Some standard library
 
@@ -20,23 +21,41 @@ def convertStr(s):
     return ret
 
 
-# Serial communcations for the Arduino Mega
+# Serial communications for the Arduino Mega
 arduinoMega = serial.Serial('/dev/ttyACM1', 9600, timeout = 1, writeTimeout = 2)
 
-# Serial communcations for the Arduino Uno	
+# Serial communications for the Arduino Uno
 arduinoUno = serial.Serial('/dev/ttyACM0', 9600, timeout = 1, writeTimeout = 2)
 
+# Reset Mega
+arduinoMega.setDTR(level=False)
+sleep(0.5)
 arduinoMega.flushInput()
-arduinoMega.flushOutput()
+arduinoMega.setDTR()
+sleep(0.5)
 
+# Reset Uno
+arduinoUno.setDTR(level=False)
+sleep(0.5)
 arduinoUno.flushInput()
-arduinoUno.flushOutput()
+arduinoUno.setDTR()
+sleep(0.5)
 
+# Serial ready variables
 arduinoMegaReady = False
 arduinoUnoReady = False
 
-print "Waiting for Arduino Setup"
+print "Waiting for Arduino Setup..."
 
+print 'Mega Handshake: ' + str(struct.unpack("B", arduinoMega.read())[0])
+arduinoMega.flushInput()
+arduinoMega.write('s')
+
+print 'Uno Handshake: ' + str(struct.unpack("B", arduinoUno.read())[0])
+arduinoUno.flushInput()
+arduinoUno.write('s')
+
+"""
 while True:
 
     if not arduinoMegaReady:
@@ -68,6 +87,7 @@ while True:
 
     if arduinoMegaReady and arduinoUnoReady:
         break
+"""
 
 b = 10.375
 
