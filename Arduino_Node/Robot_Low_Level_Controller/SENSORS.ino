@@ -24,17 +24,17 @@ void updateIR(){
   irRightAvg = 1768.2* pow(float(irRightAvg), -1.114);
 
   // Obstacle Avoidance Logic
-  if (irLeftAvg < 3.5 && irRightAvg >= 3.5){
+  if (irLeftAvg < 5.5 && irRightAvg >= 3.5){
     // reverse and turn right
     bumpRecomnd = 3;
     bumpFlag = true;
   }
-  else if (irLeftAvg >= 3.5 && irRightAvg < 3.5){
+  else if (irLeftAvg >= 3.5 && irRightAvg < 5.5){
     // reverse and turn left
     bumpRecomnd = 4;
     bumpFlag = true;
   }
-  else if (irLeftAvg < 3.5 && irRightAvg < 3.5){
+  else if (irLeftAvg < 4.5 && irRightAvg < 4.5){
     // reverse and turn left or right
     if(random(0,9)/5 == 1){
       bumpRecomnd = 3;
@@ -44,8 +44,8 @@ void updateIR(){
     }
     bumpFlag = true;
   }
-  else if((irRightAvg-irLeftAvg)< eps && (irLeftAvg >= 3.5 && irLeftAvg < 5.5)\
-        && (irRightAvg >= 3.5 && irRightAvg < 5.5)) {
+  else if((irRightAvg-irLeftAvg)< eps && (irLeftAvg >= 5.5 && irLeftAvg <8)\
+        && (irRightAvg >= 5.5 && irRightAvg < 8)) {
     // Turn left or right
     if(random(0,9)/5 == 1){
       irRecomnd = 1;
@@ -54,10 +54,10 @@ void updateIR(){
       irRecomnd = 2;
     }  
   }
-  else if(irLeftAvg >= 3.5 && irLeftAvg < 5.5 && irRightAvg > 5.5){
+  else if(irLeftAvg >= 5.5 && irLeftAvg < 8 && irRightAvg > 10){
     irRecomnd = 1;  // Turn right some random amount
   }
-  else if(irRightAvg >= 3.5 && irRightAvg < 5.5 && irLeftAvg > 5.5){
+  else if(irRightAvg >= 5.5 && irRightAvg < 8 && irLeftAvg > 10){
     irRecomnd = 2;  // Turn left some random amount
   }
   else{
@@ -73,10 +73,11 @@ void updateIR(){
   }
 
   // Debugging outputs
-  //  Serial.print(leftString + String(irLeftAvg) + " " );
-  //  Serial.println(rightString + String(irRightAvg));  
-}
+    Serial.print(irLeftAvg);
+    Serial.print("  ");
+    Serial.println(irRightAvg);  
 
+}
 //----------------------------------------------------------------------------------------------------------------------------//
 //----------------------------------------------------------------------------------------------------------------------------//
 

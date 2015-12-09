@@ -29,7 +29,7 @@ void motorController(){
       leftSetpoint = robotSpeed;
       rightSetpoint = robotSpeed;
       isStopped = false;
-      Serial.println("I made it forward");
+      //Serial.println("I made it forward");
       newDistance = false;
       
     }
@@ -40,7 +40,7 @@ void motorController(){
       leftSetpoint = -robotSpeed;
       rightSetpoint = -robotSpeed;
       isStopped = false;
-      Serial.println("I made it reverse");
+      //Serial.println("I made it reverse");
       newDistance = false;
       
     }
@@ -51,7 +51,7 @@ void motorController(){
       leftSetpoint = -robotSpeed;
       rightSetpoint = robotSpeed;
       isStopped = false;
-      Serial.println("I made it left");
+      //Serial.println("I made it left");
       newDistance = false;
       
     }
@@ -62,10 +62,15 @@ void motorController(){
       leftSetpoint = robotSpeed;
       rightSetpoint = -robotSpeed;
       isStopped = false;
-      Serial.println("I made it right");
+      //Serial.println("I made it right");
       newDistance = false;
       
     }
+    /*
+    else if(motionDirection == 0){
+      Serial.println("I stopped");
+    }
+    */
   }   
   // PD controller
   // Need to convert to actual position measurements.

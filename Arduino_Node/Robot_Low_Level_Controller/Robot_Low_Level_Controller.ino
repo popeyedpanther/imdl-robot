@@ -68,7 +68,7 @@ const int rightCurrentPin = 3;   // A9, CS2
 const unsigned long irPeriod = 100;      // Sampling period for IR Sensors (ms)
 const unsigned long currentPeriod = 100; // Sampling period for current sensor (ms)
 const unsigned long encoderPeriod = 50;  // Sampling period for encoder sensor (ms)
-const unsigned long serialPeriod = 75;  // Sampling period for serial read (ms)
+const unsigned long serialPeriod = 50;  // Sampling period for serial read (ms)
 const unsigned long stoppedPeriod = 150; // Sampling period for stopped measurement (ms)
 
 
@@ -81,7 +81,7 @@ unsigned long previousMillis_Serial=0;  // Stores the previous time the serial w
 unsigned long previousMillis_Stopped=0; // Stores the previous time if the robot was stopped
 
 // ---Constants---
-const int eps = 0.75;
+const int eps = 0.66;
 
 // Encoder Conversion Constant
 const double C = (3.54*3.14159)/4741.41;
@@ -117,7 +117,7 @@ volatile boolean bumpFlag = false;  // Will be set true if a bump sensor is trig
 
 // Serial Communications stuff
 double temp = 0;
-boolean newBehavior = false;
+boolean newBehavior = true;
 boolean newDistance = false;   // Signifies if a new command has been recieved           
 boolean newWristGraspCmd = false;   // Signifies if a new command has been recieved
 boolean newRequest = false;
@@ -134,6 +134,7 @@ double leftDistance = 0, rightDistance = 0;
 int requestState = 0, requestComplete = 0, OAState = 0;
 
 double robotSpeed = 5;
+char buffer[8];
 
 // Arbiter Variables
 boolean OAOverride = false, OADone = true;            // Did a recommended OA motion finish?
@@ -156,8 +157,10 @@ boolean isStopped = true;
 double leftSetpoint, leftInput, leftOutput;
 double rightSetpoint, rightInput, rightOutput;
 
+int D;
+float controllerLeftDistance = 0, controllerRightDistance = 0;
 boolean leftDone = false, rightDone = false;
-double leftOffset = 0.50, rightOffset = 1.25; // Distance offsets to account stopping time.
+double leftOffset = 2.375, rightOffset = 2.375; // Distance offsets to account stopping time.
 
 // PID Tuning Paramters
 double lKp = 2.75, lKi = 0, lKd = 2.25;
@@ -205,10 +208,10 @@ void messageParse(){
     }
     
     temp = piMessage.readDouble();
-    if( temp != 99){leftDistance = temp;}
+    if( temp != 99.0){leftDistance = temp;}
     temp = piMessage.readDouble();
-    if( temp != 99){rightDistance = temp;}
-    if (leftDistance != 99 || rightDistance != 99){ newDistance = true; }
+    if( temp != 99.0){rightDistance = temp;}
+    if (leftDistance != 99.0 || rightDistance != 99.0){ newDistance = true; }
 
     wristCmd = piMessage.readInt();
     graspCmd = piMessage.readInt();  
@@ -331,6 +334,10 @@ void loop()
     updateCurrent();    // Sensor TAB
   }
   
+//-------------------------------------------Obstacle Avoidance-------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------
+
+  obstacleAvoidance();
 
 //----------------------------------------------Smart Arbiter---------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------
@@ -352,6 +359,19 @@ void loop()
 
 //-------------------------------------------Serial Send Update-------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------
+if(newRequest && requestState == 1){
+  dtostrf(dx, 7, 2, buffer);
+  Serial.print(buffer);
+  Serial.print(":");
+  dtostrf(dy, 7, 2, buffer);
+  Serial.print(buffer);
+  Serial.print(":");
+  dtostrf(dtheta, 7, 2, buffer);
+  Serial.print(buffer);
+  Serial.println(":");
+  newRequest = false;
+  
+}
 
 }
 //----------------------------------------------------------------------------------------------------------------------------//

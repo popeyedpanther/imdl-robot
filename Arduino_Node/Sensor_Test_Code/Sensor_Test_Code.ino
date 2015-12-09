@@ -173,8 +173,8 @@ void loop() // run over and over again
     irRightAvg = 1768.2* pow(float(irRightAvg), -1.114);
           
     // Debugging outputs
-    Serial.print(leftString + String(irLeftAvg) + " " );
-    Serial.println(rightString + String(irRightAvg));  
+    Serial.print(leftString + String(irLeftAvg,3) + " " );
+    Serial.println(rightString + String(irRightAvg),3);  
   
   }
 

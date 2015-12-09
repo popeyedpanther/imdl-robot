@@ -340,7 +340,7 @@ void loop() // run over and over again
     */
   }
 
-  if((currentMillis - actionTimer) >= random(750,1750) || actionOverride){     
+  if((currentMillis - actionTimer) >= random(1500,2500) || actionOverride){     
      actionLock = false;
 
      if(bumpFlag && (bumpRecomnd == 1 || bumpRecomnd == 2)){

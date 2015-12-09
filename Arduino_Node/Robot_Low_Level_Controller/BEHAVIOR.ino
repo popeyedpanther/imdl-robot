@@ -4,7 +4,7 @@ void updateBehavior(){
       // Robot should be inactive
       // Obstacle avoidance should be off and the robot should not move.
       // Gripper should not move also
-      OAoff = true;
+      OAoff = false;
       OAOverride = false;
       gripOff = true;
       }
@@ -41,6 +41,7 @@ void updateBehavior(){
       OAOverride  = false;
       gripOff = true;
     }
+    newBehavior = false;
   }
 }
 
@@ -58,6 +59,7 @@ void obstacleAvoidance(){
         Turn = false;
         currentFlag = false;
         OADone = false;
+        //Serial.println("Current");
       }
       else if(bumpRecomnd == 3){
         // Reverse and right turn motion
@@ -67,6 +69,7 @@ void obstacleAvoidance(){
         bumpRecomnd = 0;
         bumpFlag = false;
         OADone = false;
+        //Serial.println("bump Left");
       } 
       else if(bumpRecomnd == 4){
         // Reverse and left turn motion
@@ -76,18 +79,21 @@ void obstacleAvoidance(){
         bumpRecomnd = 0;
         bumpFlag = false;
         OADone = false;
+        Serial.println("bump right");
       } 
       else if(irRecomnd == 1 && OADone){
         // Turn Right
         Reverse = false;
         Turn = true;
-        turnDirection = 3;                                      
+        turnDirection = 3;  
+        //Serial.println("IR Left");        
       }
       else if(irRecomnd == 2 && OADone){
         // Turn left
         Reverse = false;
         Turn = true;
         turnDirection = 4;
+        Serial.println("IR Right");
       }
     }
   }
