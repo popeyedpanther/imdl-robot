@@ -7,7 +7,7 @@
 // ---PWM Pin Setting---
 
 // PWM pins for the two drive motors
-const int PWMDrivePin_Left = 11;    // Timer 1 16-bit
+const int PWMDrivePin_Left = 11;    // Timer 1 16-
 const int PWMDrivePin_Right = 12;   // Timer 1 16-bit
 
 // ---Pololu Motor Pins---
@@ -49,10 +49,10 @@ double rightSetpoint, rightInput, rightOutput;
 boolean leftDone = false, rightDone = false;
 
 // PID Tuning Paramters
-double lKp = 1.75, lKi = 0, lKd = 1.25;
-double rKp = 1.75, rKi = 0, rKd = 1.25;
+double lKp = 50, lKi = 0, lKd = 25;
+double rKp = 50, rKi = 0, rKd = 25
 
-double K = 10;
+double K = 1;
 
 // Define drive motor object
 DualVNH5019MotorDriver driveMotors(Drive_INA1,Drive_INB1,PWMDrivePin_Left,\
@@ -80,7 +80,7 @@ unsigned int timer = 0;
 boolean driveStop = false;
 
 double stopDist = 23;
-double leftOffset= 0.50, rightOffset = 1.25;
+double leftOffset= 0.75, rightOffset = 0.75;
 
 
 
@@ -96,8 +96,8 @@ void setup() {
   leftPID.SetSampleTime(10);
   rightPID.SetSampleTime(10); 
    
-  leftPID.SetOutputLimits(-10,10);
-  rightPID.SetOutputLimits(-10,10);
+  leftPID.SetOutputLimits(-150,150);
+  rightPID.SetOutputLimits(-150,150);
 
   leftPID.SetMode(AUTOMATIC);
   rightPID.SetMode(AUTOMATIC);
@@ -106,8 +106,8 @@ void setup() {
   
   Serial.begin(9600);
   
-  leftSetpoint = 5;
-  rightSetpoint = 5;
+  leftSetpoint = 1.5;
+  rightSetpoint = 1.5;
   
 
   
@@ -151,6 +151,9 @@ void loop() {
   
   if((leftDone && rightDone)){
       // Set the speeds together
+      Serial.print(K*leftOutput);
+      Serial.print("  ");
+      Serial.println(K*rightOutput);
       driveMotors.setSpeeds(K*leftOutput, K*rightOutput);
       leftDone = false;
       rightDone = false;
