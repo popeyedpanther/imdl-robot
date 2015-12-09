@@ -50,7 +50,7 @@ boolean leftDone = false, rightDone = false;
 
 // PID Tuning Paramters
 double lKp = 50, lKi = 0, lKd = 25;
-double rKp = 50, rKi = 0, rKd = 25
+double rKp = 50, rKi = 0, rKd = 25;
 
 double K = 1;
 
@@ -93,8 +93,8 @@ void setup() {
   /* Set PID output limits
    *  This limits correspond to the inputs in the VNH5019 Motor Driver setSpeed method.
    */
-  leftPID.SetSampleTime(10);
-  rightPID.SetSampleTime(10); 
+  leftPID.SetSampleTime(50);
+  rightPID.SetSampleTime(50); 
    
   leftPID.SetOutputLimits(-150,150);
   rightPID.SetOutputLimits(-150,150);
