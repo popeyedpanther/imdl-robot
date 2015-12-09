@@ -134,7 +134,7 @@ double leftDistance = 0, rightDistance = 0;
 int requestState = 0, requestComplete = 0, OAState = 0;
 
 double robotSpeed = 5;
-char buffer[8];
+char buffer[8];             // for converting a double to a string.
 
 // Arbiter Variables
 boolean OAOverride = false, OADone = true;            // Did a recommended OA motion finish?
@@ -177,7 +177,7 @@ rightCurrentPin, 1);
 
 // Define encoder object
 Encoder leftEncoder(leftEncoderAPin, leftEncoderBPin);
-Encoder rightEncoder(rightEncoderBPin, rightEncoderBPin);
+Encoder rightEncoder(rightEncoderAPin, rightEncoderBPin);
 
 /* Define PID object
  *  PID will take the velocity as an input. So the derivative will be calculated be calling the PID function
@@ -312,7 +312,10 @@ void setup()  // Needs to stay in setup until all necessary communications can b
 
 void loop()
 {
-  
+  // If there is data available, read it in
+  while( Serial.available() ) piMessage.process(Serial.read());
+
+  /* Old serial read
   currentMillis = millis(); // Program run time in milliseconds.
   
   // Read serial and call parser
@@ -320,17 +323,22 @@ void loop()
     previousMillis_Serial = currentMillis;
     while( Serial.available() ) piMessage.process(Serial.read());
   }
-
+  */
+  
+//------------------------------------------------Behavior------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------
   // Act of behavior here like locking certain commands or something
   updateBehavior();   // Behavior TAB
 
+//-------------------------------------------------Gripper------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------
   // Update the gripper with new position commands
   updateGripper();  // Actuators TAB
 
-  currentMillis = millis(); // Program run time in milliseconds. Used for sensor sampling.
-
 //-------------------------------------------------Sensors------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------
+
+  currentMillis = millis(); // Program run time in milliseconds. Used for sensor sampling.
 
   //---- Distance Measurement IR Smart Sensor ----
   if (currentMillis - previousMillis_IR >= irPeriod){

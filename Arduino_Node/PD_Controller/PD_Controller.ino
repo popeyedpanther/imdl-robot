@@ -60,8 +60,8 @@ Drive_EN1DIAG1,leftCurrentPin,Drive_INA2,Drive_INB2,PWMDrivePin_Right,Drive_EN2D
 rightCurrentPin, 1);
 
 // Define encoder object
-Encoder leftEncoder(leftEncoderAPin, leftEncoderBPin);
-Encoder rightEncoder(rightEncoderBPin, rightEncoderBPin);
+Encoder leftEncoder(leftEncoderBPin, leftEncoderAPin);
+Encoder rightEncoder(rightEncoderAPin, rightEncoderBPin);
 
 /* Define PID object
  *  PID will take the velocity as an input. So the derivative will be calculated be calling the PID function
