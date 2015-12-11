@@ -47,13 +47,21 @@ arduinoUnoReady = False
 
 print "Waiting for Arduino Setup..."
 
+
 print 'Mega Handshake: ' + str(struct.unpack("B", arduinoMega.read())[0])
-arduinoMega.flushInput()
+arduinoMega.flushOutput()
+sleep(0.1)
 arduinoMega.write('s')
+sleep(0.1)
+arduinoMega.flushInput()
+
 
 print 'Uno Handshake: ' + str(struct.unpack("B", arduinoUno.read())[0])
-arduinoUno.flushInput()
+arduinoUno.flushOutput()
+sleep(0.1)
 arduinoUno.write('s')
+sleep(0.1)
+arduinoUno.flushInput()
 
 b = 10.375
 
@@ -164,7 +172,7 @@ while Loop:
                 print "Input pan angle in degrees (some limits in place)"
                 pan = convertStr(raw_input())
                 if 0 <=  pan <= 180:
-                    arduinoUno.write('9:'+ str(pan) + ':999:\r')
+                    arduinoUno.write('9:9:9:'+ str(pan) + ':999:\r')
                     sleep(0.1)
                     print arduinoUno.readline()
                 else:
@@ -173,7 +181,7 @@ while Loop:
                 print "Input tilt angle in degrees (some limits in place)"
                 tilt = convertStr(raw_input())
                 if 80 < tilt < 130:
-                    arduinoUno.write('9:999:' + str(tilt) + ':\r')
+                    arduinoUno.write('9:9:9:999:' + str(tilt) + ':\r')
                     sleep(0.1)
                     print arduinoUno.readline()
                 else:
@@ -194,7 +202,7 @@ while Loop:
                 if 1 <= behavior <= 4:
                     arduinoMega.write(str(behavior) + ':99:99:999:999:99:9:9:\r')
                     sleep(0.1)
-                    arduinoUno.write(str(behavior) + ':999:999:\r')
+                    arduinoUno.write(str(behavior) + '9:9:999:999:\r')
                 else:
                     print "Invalid Input"
             elif choice == 'q' or choice == 'Q':
@@ -226,6 +234,6 @@ while Loop:
         # Send messages to turn off actuators
         arduinoMega.write('9:0:0:180:125:99:9:9:\r')
         arduinoMega.close()
-        arduinoUno.write('9:90:90:\r')
+        arduinoUno.write('9:9:9:90:90:\r')
         arduinoUno.close()
         Loop = False

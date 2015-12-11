@@ -28,12 +28,8 @@ unsigned long currentMillis;
 
 unsigned long debouncePeriod = 200;
 
-
-// Binary true/false array to store if the object has been recovered yet.
-int blocksFound[2] = {0, 0}; // Zero is false
-
 // Serial Communications stuff
-int inByte;
+int temp;
 int activeBehavior = 0;
 boolean newBehavior = false;
 int panCmd = 90, tiltCmd = 90;        
@@ -42,8 +38,16 @@ boolean newRequest = false;
 boolean startButton = true;    // Start button needs to be pressed in order for Bob to start moving
 boolean readyBypass = false;    //Used to bypass the serial ready check
 
+// Pixy tracking variables
+boolean foundObject = false, pixyDebug = false, objectPlaced = false;
+const int cCodesSize = 1;
+int activeSignature;
+int cCodes[cCodesSize] = {83}, cCodesDone[cCodesSize] = {0};     // Dont forget to update cCodesSize variable if more than one CCode is used.
+int xPosition = 0, yPosition = 0;
+
+
 //----Define Objects----
-// Create a message object
+// Create a message object, individual messages will be seperated by :
 Messenger piMessage = Messenger(':');
 
 // Define pan tilt servo objects
@@ -58,10 +62,25 @@ void messageParse(){
   // This will set the variables that need to be changed
   // from the message
   if (piMessage.available()){
-    activeBehavior = piMessage.readInt();
-    if (activeBehavior != 9){ 
+    // Current behavior of Bob
+    temp = piMessage.readInt();
+    if (temp != 9){ 
       newBehavior = true;
+      activeBehavior = temp;
     }
+    
+    // Request an update
+    temp = piMessage.readInt();
+    if (temp == 1){ 
+      newRequest = true;
+    }
+    
+    // Object has been placed
+    temp = piMessage.readInt();
+    if (temp == 1){ 
+      objectPlaced = true;
+    }
+    
     panCmd = piMessage.readInt();
     tiltCmd = piMessage.readInt();
     if (panCmd != 999 || tiltCmd != 999){ 
@@ -69,6 +88,9 @@ void messageParse(){
     }
   }  
 }
+
+//--------------------------------------------------------Setup---------------------------------------------------------------//
+//----------------------------------------------------------------------------------------------------------------------------//
 
 void setup() {
   
@@ -82,42 +104,23 @@ void setup() {
   // Initialize Pixy object
   ffPixy.init();
   
-  // Start serial and wait for the "Go" command
+  // Start serial connection
   Serial.begin(9600);
+  // Attach a call function to the messenger object to call when serial information is recieved
   piMessage.attach(messageParse);
   delay(50);
 
+  // Serial Handshake with the Odroid
   while( !Serial.available()){
     Serial.write('r');
     delay(300);
   }
 
   Serial.read();
-
-  /*
-  // Stay in a loop until read to move on
-  while(1){
-    // Set readyBypass to true to skip waiting for Odroid confirmation and button switch confimation
-    if (readyBypass){
-      break;
-    }
-    
-    if (Serial.available() > 0){
-      inByte = Serial.read();
-    }
-    
-    
-    if (inByte == 115 && startButton){
-        Serial.println('g');
-        break;
-    }
-
-    Serial.println('r');
-
-    delay(100);
-  }
-  */
 }
+
+//--------------------------------------------------------Main Loop-----------------------------------------------------------//
+//----------------------------------------------------------------------------------------------------------------------------//
   
 void loop() {
   // put your main code here, to run repeatedly:
@@ -131,38 +134,22 @@ void loop() {
 
   while( Serial.available() ) piMessage.process(Serial.read());
 
+//---------------------------------------------Pan/Tilt Update--------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------
+
   // Update Pan servo is new command is recieved.
   updatePanTilt(); 
   
-  /*
-  // Pixy Read
-  static int i = 0;
-  int j;
-  uint16_t blocks;
-  char buf[32]; 
+//---------------------------------------------Pixy Tracking----------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------
+
+  pixyTracking();
   
-  // grab blocks!
-  blocks = ffPixy.getBlocks();
-  
-  // If there are detect blocks, print them!
-  if (blocks)
-  {
-    i++;
-    
-    // do this (print) every 50 frames because printing every
-    // frame would bog down the Arduino
-    if (i%50==0)
-    {
-      sprintf(buf, "Detected %d:\n", blocks);
-      Serial.print(buf);
-      for (j=0; j<blocks; j++)
-      {
-        sprintf(buf, "  block %d: ", j);
-        Serial.print(buf); 
-        ffPixy.blocks[j].print();
-      }
-    }
-  }  
-  */
+//---------------------------------------------Serial Response--------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------
+
+  serialResponse();
 
 }
+//----------------------------------------------------------------------------------------------------------------------------//
+//----------------------------------------------------------------------------------------------------------------------------//

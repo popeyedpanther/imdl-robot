@@ -16,10 +16,10 @@ class Robot:
         self.behavior = 0                   # Current behavior the robot is in
         self.state = np.array([0, 0, 0])
         # Serial communications for the Arduino Mega
-        self.arduinoMega = serial.Serial(port = '/dev/ttyACM0', baudrate = 9600, timeout = 1, writeTimeout = 2)
+        self.arduinoMega = serial.Serial(port = '/dev/ttyACM1', baudrate = 9600, timeout = 3, writeTimeout = 3)
 
         # Serial communications for the Arduino Uno
-        self.arduinoUno = serial.Serial(port = '/dev/ttyACM1', baudrate = 9600, timeout = 1, writeTimeout = 2)
+        self.arduinoUno = serial.Serial(port = '/dev/ttyACM0', baudrate = 9600, timeout = 3, writeTimeout = 3)
 
         self.arduinoMega.flushInput()
         self.arduinoMega.flushOutput()
@@ -32,7 +32,7 @@ class Robot:
     def stateUpdate(self):
         self.arduinoMega.write()
         sleep(0.1)
-        message = self.arduinoMega.readline()
+        message = self.arduinoMega.readline().split(':')
 
         statechange = np.array([float(message[0]), float(message[1]), float(message[2])])
 
@@ -42,7 +42,7 @@ class Robot:
         self.behavior = behavior
         self.arduinoMega.write(str(self.behavior) + ':' + '99:99:999:999:99:9:9:\r')
         sleep(0.1)
-        self.arduinoUno.write(str(self.behavior) + ':' + '99:99:999:999:99:9:9:\r')  # Update with correct Uno message
+        self.arduinoUno.write(str(self.behavior) + ':' + '9:9:999:999;\r')  # Update with correct Uno message
         sleep(0.1)
 
     def move(self, Dir, amount):
@@ -64,9 +64,22 @@ class Robot:
             self.arduinoMega.write('9:' + "{:.2f}".format(distance) + ':' + "{:.2f}".format(-distance) + ':' +
                                    '999:999:99:9:9:\r')
 
+    def requestMega(self):
+		self.arduinoMega.flushInput()
+		self.writeMega('9:0:0:999:999:99:1:9:\r'))
+		sleep(0.1)
+		message = self.arduinoMega.readline().split(':')
+		
+	def requestUno(self):
+		
+    
+    
+    """
     def readMega(self):
         # This method will read the output of the Arduino Mega and parse the information
         # returns a list of the separate components of the message as strings
+        self.arduinoMega.flushInput()
+        sleep(0.1)
         megaMessage = self.arduinoMega.readline()
         messageListMega = megaMessage.split(":")
         return messageListMega
@@ -74,9 +87,23 @@ class Robot:
     def readUno(self):
         # This method will read the output of the Arduino Uno and parse the information
         # returns a list of the separate components of the message as strings
+        self.arduinoUno.flushInput()
+        sleep(0.1)
         unoMessage = self.arduinoUno.readline()
         messageListUno = unoMessage.split(":")
         return messageListUno
+    """
+        
+    def writeMega(self, message):
+		self.arduinoMega.flushOutput()
+		sleep(0.05)
+		self.arduinoMega.write(message)
+		
+	def writeUno(self, message):
+		self.arduinoUno.flushOutput()
+		sleep(0.05)
+		self.arduinoUno.write(message)
+		
     """
     def collectdata(self):
         # This needs to collect data from three out of four beacons.

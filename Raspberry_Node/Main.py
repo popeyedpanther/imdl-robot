@@ -26,49 +26,34 @@ taskComplete = False
 arduinoMegaReady = False
 arduinoUnoReady = False
 
-print "Waiting for Arduino Setup"
-
-while True:
-
-    # Wait for the Arduino Mega to respond ready
-    if not arduinoMegaReady:
-        messageMega = Bob.arduinoMega.readline()
-        print messageMega
-        if messageMega == 'r\r\n':
-            while True:
-                Bob.arduinoMega.write('s')
-                sleep(0.01)
-                if Bob.arduinoMega.readline() == 'g\r\n':
-                    break
-            arduinoMegaReady = True
-            print "Mega Done"
-
-    sleep(0.1)
-
-    # Wait for the arduino Uno to respond ready
-    if not arduinoUnoReady:
-        messageUno = Bob.arduinoUno.readline()
-        print messageUno
-        if messageUno == 'r\r\n':
-            while True:
-                Bob.arduinoUno.write('s')
-                sleep(0.01)
-                if Bob.arduinoUno.readline() == 'g\r\n':
-                    break
-            arduinoUnoReady = True
-            print "Uno Done"
-        sleep(0.1)
-
-    # Leave setup when both arduinos are ready
-    if arduinoMegaReady and arduinoUnoReady:
-        break
-
-# Clear the serial buffers before main loop
+# Reset Mega
+Bob.arduinoMega.setDTR(level=False)
+sleep(0.5)
 Bob.arduinoMega.flushInput()
-Bob.arduinoMega.flushOutput()
+Bob.arduinoMega.setDTR()
+sleep(0.5)
 
+# Reset Uno
+Bob.arduinoUno.setDTR(level=False)
+sleep(0.5)
 Bob.arduinoUno.flushInput()
+Bob.arduinoUno.setDTR()
+sleep(0.5)
+
+print "Waiting for Arduino Setup..."
+
+print 'Mega Handshake: ' + str(struct.unpack("B", arduinoMega.read())[0])
+Bob.arduinoMega.flushOutput()
+sleep(0.1)
+Bob.arduinoMega.write('s')
+sleep(0.1)
+Bob.arduinoMega.flushInput()
+
+print 'Uno Handshake: ' + str(struct.unpack("B", arduinoUno.read())[0])
 Bob.arduinoUno.flushOutput()
+sleep(0.1)
+Bob.arduinoUno.write('s')
+Bob.arduinoUno.flushInput()
 
 # Bob should localize first time through
 # Bob.localize()
@@ -103,6 +88,11 @@ while continuousRun:
 
     if Bob.behavior == 1:
         # Do what is necessary to find a block
+        # Issue movement commands to the Arduino Mega
+        # Request updates from the Arduino Uno
+        Bob.arduinoUno.flushInput()
+        Bob.arduinoUno.flushOutput()
+        Bob.arduinoUno.write(
     elif Bob.behavior == 2:
         # Do what is necessary to pick up the block
     elif Bob.behavior == 3:
