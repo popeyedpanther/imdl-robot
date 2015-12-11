@@ -64,6 +64,10 @@ void loop()
     // frame would bog down the Arduino
     if (i%50==0)
     {
+      
+      Serial.println(pixy.blocks[0].signature);
+      
+      /*
       sprintf(buf, "Detected %d:\n", blocks);
       Serial.print(buf);
       for (j=0; j<blocks; j++)
@@ -72,6 +76,7 @@ void loop()
         Serial.print(buf); 
         pixy.blocks[j].print();
       }
+      */
     }
   }  
 }
