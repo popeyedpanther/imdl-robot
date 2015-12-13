@@ -163,10 +163,10 @@ boolean leftDone = false, rightDone = false;
 double leftOffset = 2.375, rightOffset = 2.375; // Distance offsets to account stopping time.
 
 // PID Tuning Paramters
-double lKp = 2.75, lKi = 0, lKd = 2.25;
-double rKp = 3.75, rKi = 0, rKd = 2.25;
+double lKp = 10, lKi = 5, lKd = 0;
+double rKp = 10, rKi = 5, rKd = 0;
 
-double K = 5;
+double K = 1;
 
 //----Define Objects-----
 

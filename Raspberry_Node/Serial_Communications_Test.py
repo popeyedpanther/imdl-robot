@@ -22,7 +22,7 @@ def convertStr(s):
 
 
 # Serial communications for the Arduino Mega
-arduinoMega = serial.Serial('/dev/ttyACM1', 9600, timeout = 3, writeTimeout = 3)
+arduinoMega = serial.Serial('/dev/ttyACM5', 9600, timeout = 3, writeTimeout = 3)
 
 # Serial communications for the Arduino Uno
 arduinoUno = serial.Serial('/dev/ttyACM0', 9600, timeout = 3, writeTimeout = 3)
