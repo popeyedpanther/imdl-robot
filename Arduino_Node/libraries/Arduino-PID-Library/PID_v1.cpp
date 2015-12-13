@@ -52,7 +52,7 @@ bool PID::Compute()
    if(timeChange>=SampleTime)
    {
       /*Compute all the working error variables*/
-	  double input = (*myInput - lastInput)/timeChange;
+	  double input = 1000*(*myInput - lastInput)/timeChange;
       double error = *mySetpoint - input;
       ITerm+= (ki * error);
       if(ITerm > outMax) ITerm= outMax;
