@@ -96,8 +96,8 @@ void setup() {
   leftPID.SetSampleTime(50);
   rightPID.SetSampleTime(50); 
    
-  leftPID.SetOutputLimits(-150,150);
-  rightPID.SetOutputLimits(-150,150);
+  leftPID.SetOutputLimits(-100,100);
+  rightPID.SetOutputLimits(-100,100);
 
   leftPID.SetMode(AUTOMATIC);
   rightPID.SetMode(AUTOMATIC);
@@ -151,9 +151,9 @@ void loop() {
   
   if((leftDone && rightDone)){
       // Set the speeds together
-      Serial.print(K*leftOutput);
-      Serial.print("  ");
-      Serial.println(K*rightOutput);
+      //Serial.print(K*leftOutput);
+      //Serial.print("  ");
+      //Serial.println(K*rightOutput);
       driveMotors.setSpeeds(K*leftOutput, K*rightOutput);
       leftDone = false;
       rightDone = false;
