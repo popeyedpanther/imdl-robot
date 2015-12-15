@@ -14,9 +14,17 @@ class Robot:
     def __init__(self, robotName, beacons):
         self.name = robotName               # Name of your robot
         self.behavior = 0                   # Current behavior the robot is in
-        self.state = np.array([0, 0, 0])
+        self.state = np.array([float(0), float(0), float(0)])
+        self.OAState = 0
+        self.Pan = 0
+        self.Tilt = 0
+        self.foundObject = 0
+        self.objectX = 0
+        self.objectY  = 0
+        self.motionComplete = 0
+        self.OAOverride = 0
         # Serial communications for the Arduino Mega
-        self.arduinoMega = serial.Serial(port = '/dev/ttyACM1', baudrate = 9600, timeout = 3, writeTimeout = 3)
+        self.arduinoMega = serial.Serial(port = '/dev/ttyACM2', baudrate = 9600, timeout = 3, writeTimeout = 3)
 
         # Serial communications for the Arduino Uno
         self.arduinoUno = serial.Serial(port = '/dev/ttyACM0', baudrate = 9600, timeout = 3, writeTimeout = 3)
@@ -66,16 +74,21 @@ class Robot:
         self.writeMega('9:0:0:999:999:99:1:9:\r')
         sleep(0.1)
         message = self.arduinoMega.readline().split(':')
-        print message
         ## parse message here
+        self.stateUpdate([message[0], message[1],  message[2]])
+        self.motionComplete = int(message[3])
+        self.OAOverride = int(message[4])
 
     def requestUno(self):
         self.arduinoUno.flushInput()
         self.writeUno('9:1:9:999:999:\r')
         sleep(0.1)
         message = self.arduinoUno.readline().split(':')
-        print message
-        ## parse message here
+        self.Pan = int(message[0])
+        self.Tilt = int(message[1])
+        self.foundObject = int(message[2])
+        self.objectX = int(message[3])
+        self.objectY = int(message[4])
 
     def writeMega(self, message):
         self.arduinoMega.flushOutput()
