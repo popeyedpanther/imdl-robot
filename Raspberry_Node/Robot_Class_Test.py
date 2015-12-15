@@ -56,9 +56,6 @@ sleep(0.1)
 Bob.arduinoUno.write('s')
 Bob.arduinoUno.flushInput()
 
-# Bob should localize first time through
-# Bob.localize()
-
 # Robot will run in this loop.
 Bob.requestUno()
 

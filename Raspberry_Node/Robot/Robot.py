@@ -1,11 +1,11 @@
 __author__ = 'Patrick'
 
 from math import *					# Standard math library
-#from libpixyusb_swig.pixy import *	# Python wrapper for C++ Pixy CMUcam5 library
-#from ctypes import *
 import serial						# Library for communicating over serial
 import numpy as np					# Matrix math library
-from time import clock, sleep				# Some standard library
+from time import clock, sleep
+#from libpixyusb_swig.pixy import *	# Python wrapper for C++ Pixy CMUcam5 library
+#from ctypes import *
 import random
 
 
@@ -18,11 +18,11 @@ class Robot:
         self.OAState = 0
         self.Pan = 0
         self.Tilt = 0
-        self.foundObject = 0
+        self.foundObject = False
         self.objectX = 0
-        self.objectY  = 0
-        self.motionComplete = 0
-        self.OAOverride = 0
+        self.objectY = 0
+        self.motionComplete = False
+        self.OAOverride = False
         # Serial communications for the Arduino Mega
         self.arduinoMega = serial.Serial(port = '/dev/ttyACM2', baudrate = 9600, timeout = 3, writeTimeout = 3)
 
@@ -51,42 +51,52 @@ class Robot:
         sleep(0.1)
 
     def move(self, Dir, amount):
+        # This method includes moving the robot and moving the gripper(wrist and claw) and pan
         b = 10.375  # inches, distance between wheels
         if Dir == 'L' or Dir == 'l':
             distance = b*radians(float(amount))/2
-            self.arduinoMega.write('9:' + "{:.2f}".format(-distance) + ':' + "{:.2f}".format(distance) + ':' +
+            self.writeMega('9:' + "{:.2f}".format(-distance) + ':' + "{:.2f}".format(distance) + ':' +
                                    '999:999:99:9:9:\r')
         elif Dir == 'R' or Dir == 'r':
             distance = b*radians(float(amount))/2
-            self.arduinoMega.write('9:' + "{:.2f}".format(distance) + ':' + "{:.2f}".format(-distance) + ':' +
+            self.writeMega('9:' + "{:.2f}".format(distance) + ':' + "{:.2f}".format(-distance) + ':' +
                                    '999:999:99:9:9:\r')
         elif Dir == 'F' or Dir == 'f':
             distance = float(amount)
-            self.arduinoMega.write('9:' + "{:.2f}".format(distance) + ':' + "{:.2f}".format(distance) + ':' +
+            self.writeMega('9:' + "{:.2f}".format(distance) + ':' + "{:.2f}".format(distance) + ':' +
                                    '999:999:99:9:9:\r')
         elif Dir == 'B' or Dir == 'b':
             distance = float(raw_input())
-            self.arduinoMega.write('9:' + "{:.2f}".format(-distance) + ':' + "{:.2f}".format(-distance) + ':' +
+            self.writeMega('9:' + "{:.2f}".format(-distance) + ':' + "{:.2f}".format(-distance) + ':' +
                                    '999:999:99:9:9:\r')
+        elif Dir == 'W' or Dir == 'w':
+            self.writeMega('9:99.0:99.0:' + str(amount) + ':999:99:9:9:\r')
+        elif Dir == 'C' or Dir == 'c':
+            self.writeMega('9:99.0:99.0:999:' + str(amount) + ':99:9:9:\r')
+        elif Dir == 'P' or Dir == 'p':
+            self.writeUno('9:9:9:' + str(amount) + ':999;\r')
+        elif Dir == 'S' or Dir == 's':
+            self.writeMega('9:0:0:999:999:99:9:9:\r')
 
     def requestMega(self):
         self.arduinoMega.flushInput()
         self.writeMega('9:0:0:999:999:99:1:9:\r')
         sleep(0.1)
         message = self.arduinoMega.readline().split(':')
-        ## parse message here
+        # Parse the message here
         self.stateUpdate([message[0], message[1],  message[2]])
-        self.motionComplete = int(message[3])
-        self.OAOverride = int(message[4])
+        self.motionComplete = bool(message[3])
+        self.OAOverride = bool(message[4])
 
     def requestUno(self):
         self.arduinoUno.flushInput()
         self.writeUno('9:1:9:999:999:\r')
         sleep(0.1)
         message = self.arduinoUno.readline().split(':')
+        # Parse the message here
         self.Pan = int(message[0])
         self.Tilt = int(message[1])
-        self.foundObject = int(message[2])
+        self.foundObject = bool(message[2])
         self.objectX = int(message[3])
         self.objectY = int(message[4])
 

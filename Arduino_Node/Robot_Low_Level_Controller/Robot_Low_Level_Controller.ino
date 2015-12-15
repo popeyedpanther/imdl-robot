@@ -1,5 +1,3 @@
-
-
 /* Patrick's Block Header
  *  
  *  
@@ -149,7 +147,7 @@ float leftWheelChange = 0, rightWheelChange = 0;
 float b = 10.375; // inches (distance between wheel centers)
 double leftStartPoint = 0, rightStartPoint = 0;
 double leftStopPoint = 0, rightStopPoint = 0;
-int oldMotionDirection = 0;
+int oldMotionDirection = 0, motionComplete = 0;
 boolean isStopped = true;
 
 
@@ -211,8 +209,11 @@ void messageParse(){
     if( temp != 99.0){leftDistance = temp;}
     temp = piMessage.readDouble();
     if( temp != 99.0){rightDistance = temp;}
-    if (leftDistance != 99.0 || rightDistance != 99.0){ newDistance = true; }
-
+    if (leftDistance != 99.0 || rightDistance != 99.0){ 
+      newDistance = true;
+      motionComplete = 0;
+    }
+    
     wristCmd = piMessage.readInt();
     graspCmd = piMessage.readInt();  
     if (wristCmd != 999 || graspCmd != 999){ newWristGraspCmd = true;}
@@ -237,8 +238,7 @@ void messageParse(){
 //----------------------------------------------------------------------------------------------------------------------------//
 
 void setup()  // Needs to stay in setup until all necessary communications can be verified
-{
-  
+{ 
   // Attach the servo objects to pins
   Wrist.attach(PWMWristPin);
   Grasp.attach(PWMGraspPin);
@@ -287,24 +287,6 @@ void setup()  // Needs to stay in setup until all necessary communications can b
   }
 
   Serial.read();
-  
-  /*
-  while(1){
-    // Set readyBypass to true to skip waiting for Odroid confirmation and button switch confimation
-    if (readyBypass){break;}
-    
-    if (Serial.available() > 0){ inByte = Serial.read();}
-    
-    if (inByte == 115){
-        Serial.println('g');
-        break;
-    }
-
-    Serial.println('r');
-
-    delay(100);
-  }
-  */
 }
 
 //--------------------------------------------------------Main Loop-----------------------------------------------------------//
@@ -377,20 +359,7 @@ void loop()
 
 //-------------------------------------------Serial Send Update-------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------
-if(newRequest && requestState == 1){
-  dtostrf(dx, 7, 2, buffer);
-  Serial.print(buffer);
-  Serial.print(":");
-  dtostrf(dy, 7, 2, buffer);
-  Serial.print(buffer);
-  Serial.print(":");
-  dtostrf(dtheta, 7, 2, buffer);
-  Serial.print(buffer);
-  Serial.println(":");
-  newRequest = false;
-  
-}
-
+  serialResponse();
 }
 //----------------------------------------------------------------------------------------------------------------------------//
 //----------------------------------------------------------------------------------------------------------------------------//

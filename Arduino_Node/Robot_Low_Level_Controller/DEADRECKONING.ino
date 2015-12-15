@@ -4,6 +4,7 @@ void deadReckoning(){
                   && abs(rightInput - rightStartPoint) > (abs(controllerRightDistance)-rightOffset) && !isStopped){
     
     motionDirection = 0;
+    motionComplete = 1;
 
   }
   

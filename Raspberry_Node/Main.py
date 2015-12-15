@@ -12,21 +12,22 @@ __Author__ = "Patrick Neal"
 from Robot.Robot import *
 import struct
 
-# Second import should be beacon locations.
-Bob = Robot("Bob", np.array([0, 0, 0]))
+# Stuff
+previousClock = 0.0
 
 # A bunch of logical variables
-foundBlock = False
-pickedupBlock = False
+pickedupObject = False
 localizeDone = False
 droppedBlock = False
 blocksDone = False
-setupComplete = False
-continuousRun = False
 taskComplete = False
-arduinoMegaReady = False
-arduinoUnoReady = False
+robotAligned = False
 
+# Second import should be beacon locations.
+Bob = Robot("Bob", np.array([0, 0, 0]))
+
+#-------------------------------------------------------Setup-----------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------------
 # Reset Mega
 Bob.arduinoMega.setDTR(level=False)
 sleep(0.5)
@@ -56,21 +57,37 @@ sleep(0.1)
 Bob.arduinoUno.write('s')
 Bob.arduinoUno.flushInput()
 
+#----------------------------------------------------Main  Loop---------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------------
+
 # Bob should localize first time through
 # Bob.localize()
 
-# Robot will run in this loop.
+continuousRun = True
+
 while continuousRun:
 
-    if not foundBlock:      # Searches for the block
+    currentClock = clock()
+
+    # Update information from the Arduinos
+    if currentClock - previousClock > 0.05:
+        previousClock = currentClock
+        Bob.requestMega()
+        Bob.requestUno()
+
+    # Behavior changes
+    if not Bob.foundObject:      # Searches for the block
         if Bob.behavior != 1:
             Bob.updateBehavior(1)
+            robotAligned = False
+            if not Bob.OAOverride:
+                Bob.move('S',0)
 
-    elif foundBlock:        # Picks up the block
+    elif Bob.foundObject and not pickedupObject:        # Picks up the block
         if Bob.behavior != 2:
             Bob.updateBehavior(2)
 
-    elif pickedupBlock:     # Should localize and drop the block
+    elif pickedupObject and not droppedBlock:     # Should localize and drop the block
         ## Should cross of that block from search list
         # Bob.localize()
 
@@ -83,38 +100,56 @@ while continuousRun:
         if blocksDone:
             taskComplete = True
         else:
-            foundBlock = False
-            pickedupBock = False
+            Bob.foundBlock = False
+            pickedupObject = False
             droppedBlock = False
 
+    # Where the actions for each behavior take place
     if Bob.behavior == 1:
         # Do what is necessary to find a block
         # Issue movement commands to the Arduino Mega
-        # Request updates from the Arduino Uno
-        Bob.arduinoUno.flushInput()
-        Bob.arduinoUno.flushOutput()
-        Bob.arduinoUno.write()
+        # Perform  some random movements here/drive around
+        if not Bob.OAOverride and Bob.motionComplete:
+            randDirection = random.randint(1, 9)
+            if 1 <= randDirection <= 3:
+                # Go forward some amount
+                Bob.move('F', 20)
+
+            elif 4 <= randDirection <= 5:
+                # Reverse some amount
+                Bob.move('R', 20)
+
+            elif 5 <= randDirection <= 7:
+                # Turn left some amount
+                Bob.move('L', 45)
+
+            else:
+                # Turn right some amount
+                Bob.move('R', 45)
 
     elif Bob.behavior == 2:
         # Do what is necessary to pick up the block
+        # Align with the block in x direction and then the y direction
+
+        # Then go to pick it up
+        if robotAligned:
+            Bob.move('W', 60)
+            sleep(0.2)
+            Bob.move('C', 55)
+            sleep(0.2)
+
+            # Drive forward and pick up object
+            Bob.move('F', 6)
+            sleep(1)
+            # Close gripper and lift
+            Bob.move('C', 132)
+            sleep(0.2)
+            Bob.move('W', 160)
+            sleep(0.2)
+
     elif Bob.behavior == 3:
 
     elif Bob.behavior == 4:
-
-
-    # Just start moving forward (maybe move randomly to increase chance of seeing block
-    Bob.move("F", 25)
-
-
-
-    # Poll the Uno and Mega for updates
-    Bob.stateUpdate()
-
-    # Update the state of Bob maybe after some specified time.
-
-    # Behavior changes should go here
-
-
 
     if taskComplete:
         # Stop robot functions and then break loop
