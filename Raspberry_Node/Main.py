@@ -10,6 +10,7 @@ __Author__ = "Patrick Neal"
 """
 
 from Robot.Robot import *
+import struct
 
 # Second import should be beacon locations.
 Bob = Robot("Bob", np.array([0, 0, 0]))
@@ -42,14 +43,14 @@ sleep(0.5)
 
 print "Waiting for Arduino Setup..."
 
-print 'Mega Handshake: ' + str(struct.unpack("B", arduinoMega.read())[0])
+print 'Mega Handshake: ' + str(struct.unpack("B", Bob.arduinoMega.read())[0])
 Bob.arduinoMega.flushOutput()
 sleep(0.1)
 Bob.arduinoMega.write('s')
 sleep(0.1)
 Bob.arduinoMega.flushInput()
 
-print 'Uno Handshake: ' + str(struct.unpack("B", arduinoUno.read())[0])
+print 'Uno Handshake: ' + str(struct.unpack("B", Bob.arduinoUno.read())[0])
 Bob.arduinoUno.flushOutput()
 sleep(0.1)
 Bob.arduinoUno.write('s')
@@ -92,7 +93,8 @@ while continuousRun:
         # Request updates from the Arduino Uno
         Bob.arduinoUno.flushInput()
         Bob.arduinoUno.flushOutput()
-        Bob.arduinoUno.write(
+        Bob.arduinoUno.write()
+
     elif Bob.behavior == 2:
         # Do what is necessary to pick up the block
     elif Bob.behavior == 3:

@@ -1,5 +1,3 @@
-
-
 /* Patrick's Block Header
  *  
  *  
@@ -9,7 +7,6 @@
  *  
  *  
  */
-
 
 //-------Include Libraries-----------------------------------
 #include <Servo.h>                    // Used for controllig hobby servo motors
@@ -149,7 +146,7 @@ float leftWheelChange = 0, rightWheelChange = 0;
 float b = 10.375; // inches (distance between wheel centers)
 double leftStartPoint = 0, rightStartPoint = 0;
 double leftStopPoint = 0, rightStopPoint = 0;
-int oldMotionDirection = 0;
+int oldMotionDirection = 0, motionComplete = 0;
 boolean isStopped = true;
 
 
@@ -160,11 +157,11 @@ double rightSetpoint, rightInput, rightOutput;
 int D;
 float controllerLeftDistance = 0, controllerRightDistance = 0;
 boolean leftDone = false, rightDone = false;
-double leftOffset = 0.1, rightOffset = 0.2; // Distance offsets to account stopping time.
+double leftOffset = 2.375, rightOffset = 2.375; // Distance offsets to account stopping time.
 
 // PID Tuning Paramters
-double lKp = 20, lKi = 6, lKd = 0;
-double rKp = 20, rKi = 5.4, rKd = 0;
+double lKp = 10, lKi = 5, lKd = 0;
+double rKp = 10, rKi = 5, rKd = 0;
 
 double K = 1;
 
@@ -176,7 +173,7 @@ Drive_EN1DIAG1,leftCurrentPin,Drive_INA2,Drive_INB2,PWMDrivePin_Right,Drive_EN2D
 rightCurrentPin, 1);
 
 // Define encoder object
-Encoder leftEncoder(leftEncoderBPin, leftEncoderAPin);
+Encoder leftEncoder(leftEncoderAPin, leftEncoderBPin);
 Encoder rightEncoder(rightEncoderAPin, rightEncoderBPin);
 
 /* Define PID object
@@ -377,19 +374,7 @@ void loop()
 
 //-------------------------------------------Serial Send Update-------------------------------------------------
 //--------------------------------------------------------------------------------------------------------------
-if(newRequest && requestState == 1){
-  dtostrf(dx, 7, 2, buffer);
-  Serial.print(buffer);
-  Serial.print(":");
-  dtostrf(dy, 7, 2, buffer);
-  Serial.print(buffer);
-  Serial.print(":");
-  dtostrf(dtheta, 7, 2, buffer);
-  Serial.print(buffer);
-  Serial.println(":");
-  newRequest = false;
-  
-}
+  serialResponse();
 
 }
 //----------------------------------------------------------------------------------------------------------------------------//
