@@ -49,8 +49,8 @@ double rightSetpoint, rightInput, rightOutput;
 boolean leftDone = false, rightDone = false;
 
 // PID Tuning Paramters
-double lKp = 15, lKi = 5, lKd = 0;
-double rKp = 15, rKi = 5, rKd = 0;
+double lKp = 20, lKi = 6, lKd = 0;
+double rKp = 19, rKi = 5.4, rKd = 0;
 
 double K = 1;
 
@@ -79,8 +79,8 @@ unsigned int timer = 0;
 
 boolean driveStop = false;
 
-double stopDist = 20;
-double leftOffset= 0.75, rightOffset = 0.75;
+double stopDist = 40;
+double leftOffset= 0.1, rightOffset = 0.2;
 
 
 
@@ -167,7 +167,7 @@ void loop() {
     rightOldPosition = rightNewPosition;
     rightNewPosition = rightInput;
     if(abs(rightNewPosition - rightOldPosition)< 0.0001){
-      //Serial.end();
+      Serial.end();
     }
     
   }

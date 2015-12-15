@@ -160,11 +160,11 @@ double rightSetpoint, rightInput, rightOutput;
 int D;
 float controllerLeftDistance = 0, controllerRightDistance = 0;
 boolean leftDone = false, rightDone = false;
-double leftOffset = 2.375, rightOffset = 2.375; // Distance offsets to account stopping time.
+double leftOffset = 0.1, rightOffset = 0.2; // Distance offsets to account stopping time.
 
 // PID Tuning Paramters
-double lKp = 10, lKi = 5, lKd = 0;
-double rKp = 10, rKi = 5, rKd = 0;
+double lKp = 20, lKi = 6, lKd = 0;
+double rKp = 20, rKi = 5.4, rKd = 0;
 
 double K = 1;
 
@@ -176,7 +176,7 @@ Drive_EN1DIAG1,leftCurrentPin,Drive_INA2,Drive_INB2,PWMDrivePin_Right,Drive_EN2D
 rightCurrentPin, 1);
 
 // Define encoder object
-Encoder leftEncoder(leftEncoderAPin, leftEncoderBPin);
+Encoder leftEncoder(leftEncoderBPin, leftEncoderAPin);
 Encoder rightEncoder(rightEncoderAPin, rightEncoderBPin);
 
 /* Define PID object

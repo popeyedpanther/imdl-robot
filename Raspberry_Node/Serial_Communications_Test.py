@@ -22,7 +22,7 @@ def convertStr(s):
 
 
 # Serial communications for the Arduino Mega
-arduinoMega = serial.Serial('/dev/ttyACM5', 9600, timeout = 3, writeTimeout = 3)
+arduinoMega = serial.Serial('/dev/ttyACM2', 9600, timeout = 3, writeTimeout = 3)
 
 # Serial communications for the Arduino Uno
 arduinoUno = serial.Serial('/dev/ttyACM0', 9600, timeout = 3, writeTimeout = 3)
@@ -92,14 +92,14 @@ while Loop:
                 print "Input desired distance"
                 distance = float(raw_input())
                 arduinoMega.flushInput()
-                arduinoMega.write('9:' + "{:.2f}".format(-distance) + ':' + "{:.2f}".format(distance) + ':' +
+                arduinoMega.write('9:' + "{:.2f}".format(distance) + ':' + "{:.2f}".format(distance) + ':' +
                                   '999:999:99:9:9:\r')
                 sleep(0.01)
                 print arduinoMega.readline()
             elif choice == '2':
                 print "Input desired distance"
                 distance = float(raw_input())
-                arduinoMega.write('9:' + "{:.2f}".format(distance) + ':' + "{:.2f}".format(-distance) + ':' +
+                arduinoMega.write('9:' + "{:.2f}".format(-distance) + ':' + "{:.2f}".format(-distance) + ':' +
                                   '999:999:99:9:9:\r')
                 sleep(0.01)
                 print arduinoMega.readline()
@@ -107,7 +107,7 @@ while Loop:
                 print "Input desired angle"
                 amount = convertStr(raw_input())
                 distance = b*radians(float(amount))/2
-                arduinoMega.write('9:' + "{:.2f}".format(distance) + ':' + "{:.2f}".format(distance) + ':' +
+                arduinoMega.write('9:' + "{:.2f}".format(-distance) + ':' + "{:.2f}".format(distance) + ':' +
                                   '999:999:99:9:9:\r')
                 sleep(0.01)
                 print arduinoMega.readline()
@@ -115,7 +115,7 @@ while Loop:
                 print "Input desired angle"
                 amount = convertStr(raw_input())
                 distance = b*radians(float(amount))/2
-                arduinoMega.write('9:' + "{:.2f}".format(-distance) + ':' + "{:.2f}".format(-distance) + ':' +
+                arduinoMega.write('9:' + "{:.2f}".format(distance) + ':' + "{:.2f}".format(-distance) + ':' +
                                   '999:999:99:9:9:\r')
                 sleep(0.01)
                 print arduinoMega.readline()
