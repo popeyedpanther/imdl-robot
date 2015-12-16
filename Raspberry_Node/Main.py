@@ -121,24 +121,24 @@ while continuousRun:
         if Bob.OAOverride != 1 and Bob.motionComplete == 1:
             randDirection = random.randint(1, 9)
             if currentClock - moveClock > 1:
-				moveClock = currentClock
-	            if 1 <= randDirection <= 3:
-	                # Go forward some amount
-	                Bob.move('F', random.randint(10, 20))
-	
-	            elif 4 <= randDirection <= 5:
-	                # Reverse some amount
-	                Bob.move('R', random.randint(10, 20))
-	
-	            elif 5 <= randDirection <= 7:
-	                # Turn left some amount
-	                Bob.move('L', random.randint(20, 45))
-	
-	            else:
-	                # Turn right some amount
-	                Bob.move('R', random.randint(20, 45))
-	            Bob.motionComplete = 0
-	            print 'How many times'
+                moveClock = currentClock
+                if 1 <= randDirection <= 3:
+                    # Go forward some amount
+                    Bob.move('F', random.randint(10, 20))
+
+                elif 4 <= randDirection <= 5:
+                    # Reverse some amount
+                    Bob.move('R', random.randint(10, 20))
+
+                elif 5 <= randDirection <= 7:
+                    # Turn left some amount
+                    Bob.move('L', random.randint(20, 45))
+
+                else:
+                    # Turn right some amount
+                    Bob.move('R', random.randint(20, 45))
+                Bob.motionComplete = 0
+                print 'How many times'
 
     elif Bob.behavior == 2:
         # Do what is necessary to pick up the block

@@ -206,11 +206,14 @@ void messageParse(){
     }
     
     temp = piMessage.readDouble();
-    if( temp != 99.00){leftDistance = temp;}
+    if( temp != 99.0){leftDistance = temp;}
     temp = piMessage.readDouble();
-    if( temp != 99.00){rightDistance = temp;}
-    if (leftDistance != 99.00 || rightDistance != 99.00){ 
+    if( temp != 99.0){rightDistance = temp;}
+    if (leftDistance != 99.0 || rightDistance != 99.0){ 
       newDistance = true;
+    }
+    else{
+      newDistance = false;
     }
     
     wristCmd = piMessage.readInt();
