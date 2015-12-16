@@ -17,6 +17,7 @@ void updateBehavior(){
       bumpFlag = false;
       irFlag = false;
       currentFlag = false;
+      motionComplete = 1;
     }
     else if(activeBehavior == 2){
       // Align and Pickup behavior
@@ -24,6 +25,7 @@ void updateBehavior(){
       OAoff = true;
       OAOverride = false;
       gripOff  = false;
+      motionComplete = 1;
     }
     else if(activeBehavior == 3){
       // Deposit behavior
@@ -32,6 +34,7 @@ void updateBehavior(){
       OAoff = true;
       OAOverride = false;
       gripOff = false;
+      motionComplete = 1;
     }
     else if(activeBehavior == 4){
       // Localize bahvior
@@ -40,6 +43,7 @@ void updateBehavior(){
       OAoff = true;
       OAOverride  = false;
       gripOff = true;
+      motionComplete = 1;
     }
     newBehavior = false;
   }
@@ -79,7 +83,7 @@ void obstacleAvoidance(){
         bumpRecomnd = 0;
         bumpFlag = false;
         OADone = false;
-        Serial.println("bump right");
+        //Serial.println("bump right");
       } 
       else if(irRecomnd == 1 && OADone){
         // Turn Right
@@ -93,7 +97,7 @@ void obstacleAvoidance(){
         Reverse = false;
         Turn = true;
         turnDirection = 4;
-        Serial.println("IR Right");
+        //Serial.println("IR Right");
       }
     }
   }

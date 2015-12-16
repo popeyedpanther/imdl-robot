@@ -14,14 +14,16 @@ import struct
 
 # Stuff
 previousClock = 0.0
+counter = 0
 
 # A bunch of logical variables
 pickedupObject = False
+firstTime = True
 localizeDone = False
 droppedBlock = False
-blocksDone = False
 taskComplete = False
 robotAligned = False
+forcedRequest = False
 
 # Second import should be beacon locations.
 Bob = Robot("Bob", np.array([0, 0, 0]))
@@ -70,27 +72,27 @@ while continuousRun:
     currentClock = clock()
 
     # Update information from the Arduinos
-    if currentClock - previousClock > 1:
+    if currentClock - previousClock > 0.1 or forcedRequest:
         previousClock = currentClock
         Bob.requestMega()
         Bob.requestUno()
-        print Bob.OAOverride
+        print Bob.motionComplete
 
     # Behavior changes
-    if Bob.foundObject != 1:      # Searches for the block
+    if Bob.foundObject != 1 and Bob.blocksDone != 1:      # Searches for the block
         if Bob.behavior != 1:
             Bob.updateBehavior(1)
             robotAligned = False
             print 'Searching'
 
-    elif Bob.foundObject == 1 and not pickedupObject:        # Picks up the block
+    elif Bob.foundObject == 1 and not pickedupObject and Bob.blocksDone != 1:        # Picks up the block
         if Bob.behavior != 2:
             Bob.updateBehavior(2)
-            if not Bob.OAOverride:
+            if Bob.OAOverride != 1:
                 Bob.move('S', 0)
             print "I found an object"
 
-    elif pickedupObject and not droppedBlock:     # Should localize and drop the block
+    elif pickedupObject and not droppedBlock and Bob.blocksDone != 1:     # Should localize and drop the block
         # Should cross of that block from search list
         # Bob.localize()
 
@@ -100,20 +102,21 @@ while continuousRun:
         
     elif droppedBlock:
         # if all blocks are found then task is complete else return to
-
-        if blocksDone:
+        counter += 1
+        if Bob.blocksDone == 1:
             taskComplete = True
         else:
             Bob.foundBlock = 0
             pickedupObject = False
             droppedBlock = False
+            firstTime = True
 
     # Where the actions for each behavior take place
     if Bob.behavior == 1:
         # Do what is necessary to find a block
         # Issue movement commands to the Arduino Mega
         # Perform  some random movements here/drive around
-        if not Bob.OAOverride and Bob.motionComplete == 1:
+        if Bob.OAOverride != 1 and Bob.motionComplete == 1:
             randDirection = random.randint(1, 9)
             if 1 <= randDirection <= 3:
                 # Go forward some amount
@@ -150,23 +153,28 @@ while continuousRun:
 
         # Then go to pick it up
         if robotAligned:
-            Bob.move('W', 60)
-            sleep(0.2)
-            Bob.move('C', 55)
-            sleep(0.2)
-
-            # Drive forward and pick up object
-            Bob.move('F', 6)
-            sleep(1)
-            # Close gripper and lift
-            Bob.move('C', 132)
-            sleep(0.2)
-            Bob.move('W', 160)
-            sleep(0.2)
-            pickedupObject = True
+            if firstTime:
+                firstTime = False
+                Bob.move('W', 60)
+                sleep(0.1)
+                Bob.move('C', 55)
+                sleep(0.1)
+                moveClock = currentClock
+                # Drive forward and pick up object
+                Bob.move('F', 10)
+            if currentClock - moveClock > 1.5:
+                # Close gripper and lift
+                Bob.move('C', 132)
+                sleep(0.1)
+                Bob.move('W', 160)
+                sleep(0.1)
+                pickedupObject = True
 
     elif Bob.behavior == 3:
         droppedBlock = True
+        Bob.writeUno('9:9:1:999:999:\r')
+        sleep(0.2)
+        forcedRequest = True
     elif Bob.behavior == 4:
         taskComplete = True
     if taskComplete:

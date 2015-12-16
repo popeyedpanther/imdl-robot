@@ -1,6 +1,6 @@
 void pixyTracking(){
   // Local variables
-  static int p = 0, index = 0, count = 0;
+  static int p = 0, index = 0;
   int i, j, k;
   uint16_t blocks;
   char buf[32]; 
@@ -11,10 +11,14 @@ void pixyTracking(){
   // Reset object and place in cCodesDone array
   if(objectPlaced == 1){
     foundObject = 0;
-    cCodesDone[count] = activeSignature;
+    cCodesDone[count-1] = activeSignature;
     count++;
     objectPlaced = 0;
   }  
+  
+  if(count == cCodesSize){
+    objectsComplete = 1; 
+  }
   
   // Search for color code objects
   for(i=0; i<cCodesSize; i++){

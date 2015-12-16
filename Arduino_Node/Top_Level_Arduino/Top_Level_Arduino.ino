@@ -41,7 +41,8 @@ boolean readyBypass = false;    //Used to bypass the serial ready check
 // Pixy tracking variables
 boolean pixyDebug = false;
 const int cCodesSize = 1;
-int activeSignature = 0, foundObject = 0, objectPlaced = 0;
+int objectsComplete = 0;
+int activeSignature = 0, foundObject = 0, objectPlaced = 0, count = 0;
 int cCodes[cCodesSize] = {83}, cCodesDone[cCodesSize] = {0};     // Dont forget to update cCodesSize variable if more than one CCode is used.
 int xPosition = 0, yPosition = 0;
 

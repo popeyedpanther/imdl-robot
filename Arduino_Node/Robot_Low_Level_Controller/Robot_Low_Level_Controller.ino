@@ -136,7 +136,7 @@ char buffer[8];             // for converting a double to a string.
 
 // Arbiter Variables
 boolean OAOverride = false, OADone = true;            // Did a recommended OA motion finish?
-int turnDirection = 0, motionDirection = 0;
+int turnDirection = 0, motionDirection = 0, OAOverrideSerial= 0;
 unsigned long OATimer = 0;
 boolean Reverse = false;
 boolean Turn = false;
@@ -206,10 +206,10 @@ void messageParse(){
     }
     
     temp = piMessage.readDouble();
-    if( temp != 99.0){leftDistance = temp;}
+    if( temp != 99.00){leftDistance = temp;}
     temp = piMessage.readDouble();
-    if( temp != 99.0){rightDistance = temp;}
-    if (leftDistance != 99.0 || rightDistance != 99.0){ 
+    if( temp != 99.00){rightDistance = temp;}
+    if (leftDistance != 99.00 || rightDistance != 99.00){ 
       newDistance = true;
       motionComplete = 0;
     }

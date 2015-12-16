@@ -22,7 +22,8 @@ class Robot:
         self.objectX = 0
         self.objectY = 0
         self.motionComplete = 0
-        self.OAOverride = False
+        self.OAOverride = 0
+        self.blocksDone = 0
         # Serial communications for the Arduino Mega
         self.arduinoMega = serial.Serial(port = '/dev/ttyACM1', baudrate = 9600, timeout = 3, writeTimeout = 3)
 
@@ -70,44 +71,46 @@ class Robot:
             self.writeMega('9:' + "{:.2f}".format(-distance) + ':' + "{:.2f}".format(-distance) + ':' +
                                    '999:999:99:9:9:\r')
         elif Dir == 'W' or Dir == 'w':
-            self.writeMega('9:99.0:99.0:' + str(amount) + ':999:99:9:9:\r')
+            self.writeMega('9:99.00:99.00:' + str(amount) + ':999:99:9:9:\r')
         elif Dir == 'C' or Dir == 'c':
-            self.writeMega('9:99.0:99.0:999:' + str(amount) + ':99:9:9:\r')
+            self.writeMega('9:99.00:99.00:999:' + str(amount) + ':99:9:9:\r')
         elif Dir == 'P' or Dir == 'p':
             self.writeUno('9:9:9:' + str(amount) + ':999;\r')
         elif Dir == 'S' or Dir == 's':
-            self.writeMega('9:0:0:999:999:99:9:9:\r')
+            self.writeMega('9:99.00:99.00:999:999:99:9:9:\r')
 
     def requestMega(self):
         self.arduinoMega.flushInput()
         self.writeMega('9:0:0:999:999:99:1:9:\r')
-        sleep(0.2)
+        sleep(0.075)
         message = self.arduinoMega.readline().split(':')
         # Parse the message here
         self.stateUpdate([message[0], message[1],  message[2]])
         self.motionComplete = int(message[3])
-        self.OAOverride = bool(message[4])
+        self.OAOverride = int(message[4])
 
     def requestUno(self):
         self.arduinoUno.flushInput()
         self.writeUno('9:1:9:999:999:\r')
-        sleep(0.1)
+        sleep(0.075)
         message = self.arduinoUno.readline().split(':')
         # Parse the message here
         self.Pan = int(message[0])
         self.Tilt = int(message[1])
         self.foundObject = int(message[2])
-        self.objectX = int(message[3])
-        self.objectY = int(message[4])
+        self.blocksDone = int(message[3])
+        self.objectX = int(message[4])
+        self.objectY = int(message[5])
 
     def writeMega(self, message):
         self.arduinoMega.flushOutput()
-        sleep(0.05)
+        sleep(0.075)
         self.arduinoMega.write(message)
+        
 
     def writeUno(self, message):
         self.arduinoUno.flushOutput()
-        sleep(0.05)
+        sleep(0.075)
         self.arduinoUno.write(message)
 
 

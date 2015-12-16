@@ -12,7 +12,13 @@ void serialResponse(){
     Serial.print(":");
     Serial.print(motionComplete);   // Was commaned motion complete?
     Serial.print(":");
-    Serial.print(OAOverride);       // Is obstacle avoidance controlling?
+    if (OAOverride){
+      OAOverrideSerial = 1;
+    }
+    else if(!OAOverride){
+      OAOverrideSerial = 0;
+    }
+    Serial.print(OAOverrideSerial);       // Is obstacle avoidance controlling?
     Serial.println(":");
     newRequest = false;
   }

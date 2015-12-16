@@ -8,6 +8,8 @@ void serialResponse(){
     Serial.print(':');
     Serial.print(foundObject);
     Serial.print(':');
+    Serial.print(objectsComplete);
+    Serial.print(':');
     Serial.print(xPosition);
     Serial.print(':');
     Serial.println(yPosition);
