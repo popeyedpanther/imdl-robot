@@ -19,6 +19,7 @@ void deadReckoning(){
           if(abs(leftStopPoint - leftEncoder.read()*C) < 0.00001 && abs(rightStopPoint - rightEncoder.read()*C) < 0.00001){
             isStopped = true;
             motionComplete = 1;
+            newDistance = false;
             // Now doing a different motion
             oldMotionDirection = motionDirection;
           }

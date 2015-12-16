@@ -25,6 +25,7 @@ droppedBlock = False
 taskComplete = False
 robotAligned = False
 forcedRequest = False
+moveDone = False
 
 # Second import should be beacon locations.
 Bob = Robot("Bob", np.array([0, 0, 0]))
@@ -106,12 +107,17 @@ while continuousRun:
         counter += 1
         if Bob.blocksDone == 1:
             taskComplete = True
+            Bob.move('W', 90)
+            sleep(0.1)
+            Bob.move('C', 55)
+            sleep(0.1)
             print "I'm Done"
         else:
             Bob.foundBlock = 0
             pickedupObject = False
             droppedBlock = False
             firstTime = True
+            moveDone = False
 
     # Where the actions for each behavior take place
     if Bob.behavior == 1:
@@ -120,7 +126,7 @@ while continuousRun:
         # Perform  some random movements here/drive around
         if Bob.OAOverride != 1 and Bob.motionComplete == 1:
             randDirection = random.randint(1, 9)
-            if currentClock - moveClock > 1:
+            if currentClock - moveClock > 0.5:
                 moveClock = currentClock
                 if 1 <= randDirection <= 3:
                     # Go forward some amount
@@ -132,30 +138,36 @@ while continuousRun:
 
                 elif 5 <= randDirection <= 7:
                     # Turn left some amount
-                    Bob.move('L', random.randint(20, 45))
+                    Bob.move('L', random.randint(30, 60))
 
                 else:
                     # Turn right some amount
-                    Bob.move('R', random.randint(20, 45))
+                    Bob.move('R', random.randint(30, 60))
                 Bob.motionComplete = 0
-                print 'How many times'
+                
 
     elif Bob.behavior == 2:
         # Do what is necessary to pick up the block
         # Align with the block in x direction and then the y direction
-        xError = (160 - Bob.objectX)
+        if not robotAligned:
+            xError = (160 - Bob.objectX)
+            # print xError
+            if(abs(xError)) > 10:
+                xError = copysign(1, xError)*10
+                
+            if 155 < Bob.objectX < 175:
+                # Robot is aligned
+                robotAligned = True
+			
+			
+            if copysign(1, xError) > 0 and Bob.motionComplete == 1 and not robotAligned:
+                Bob.move('L', abs(xError))
+                Bob.motionComplete = 0
+            elif copysign(1, xError) < 0 and Bob.motionComplete == 1 and not robotAligned:
+                Bob.move('R', abs(xError))
+                Bob.motionComplete = 0
 
-        if(abs(xError)) > 15:
-            xError = copysign(1, xError)*15
 
-        if copysign(1, xError) > 0 and Bob.motionComplete == 1:
-            Bob.move('R', abs(xError))
-        elif copysign(1, xError) < 0 and Bob.motionComplete == 1:
-            Bob.move('L', abs(xError))
-
-        if 145 < Bob.objectX < 180:
-            # Robot is aligned
-            robotAligned = True
 
         # Then go to pick it up
         if robotAligned:
@@ -166,15 +178,16 @@ while continuousRun:
                 Bob.move('C', 55)
                 sleep(0.1)
                 moveClock = currentClock
-                if Bob.motionComplete == 1:
-                    # Drive forward and pick up object
-                    Bob.move('F', 10)
-                    Bob.motionComplete = 0
-            if currentClock - moveClock > 1.5:
+            if Bob.motionComplete == 1 and not moveDone:
+                # Drive forward and pick up object
+                Bob.move('F', 12)
+                Bob.motionComplete = 0
+                moveDone = True
+            if currentClock - moveClock > 2:
                 # Close gripper and lift
                 Bob.move('C', 132)
                 sleep(0.1)
-                Bob.move('W', 160)
+                Bob.move('W', 150)
                 sleep(0.1)
                 pickedupObject = True
 

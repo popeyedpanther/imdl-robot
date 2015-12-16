@@ -161,7 +161,7 @@ boolean leftDone = false, rightDone = false;
 double leftOffset = 0.1, rightOffset = 0.2; // Distance offsets to account stopping time.
 
 // PID Tuning Paramters
-double lKp = 20, lKi = 6, lKd = 0;
+double lKp = 20.5, lKi = 6, lKd = 0;
 double rKp = 20, rKi = 5.4, rKd = 0;
 
 double K = 1;
@@ -205,23 +205,18 @@ void messageParse(){
       activeBehavior = temp;  
     }
     
-    temp = piMessage.readDouble();
-    if( temp != 99.0){leftDistance = temp;}
-    temp = piMessage.readDouble();
-    if( temp != 99.0){rightDistance = temp;}
-    if (leftDistance != 99.0 || rightDistance != 99.0){ 
+    leftDistance = piMessage.readDouble();
+    rightDistance = piMessage.readDouble();
+    if( int(leftDistance) != 99 || int(rightDistance != 99)){ 
       newDistance = true;
     }
-    else{
-      newDistance = false;
-    }
-    
+
     wristCmd = piMessage.readInt();
     graspCmd = piMessage.readInt();  
     if (wristCmd != 999 || graspCmd != 999){ newWristGraspCmd = true;}
       
     temp = piMessage.readDouble();
-    if (temp != 99 && (temp >= 0 && temp < 15)){ robotSpeed = temp; }
+    if (int(temp) != 99 && (temp >= 0 && temp < 15)){ robotSpeed = temp; }
 
     temp = piMessage.readInt();
     if (temp != 9 && temp >= 0 && temp <= 2){ 

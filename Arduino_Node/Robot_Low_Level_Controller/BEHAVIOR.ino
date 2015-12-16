@@ -12,6 +12,7 @@ void updateBehavior(){
       // Search/Wander Behavior
       // Obstacle avoidance should be on, should recieve commands from Odroid
       OAoff = false;
+      //OAOverride = false;
       gripOff = true;
       // Reset all sensor flags
       bumpFlag = false;

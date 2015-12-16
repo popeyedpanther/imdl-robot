@@ -46,13 +46,14 @@ class Robot:
 
     def updateBehavior(self, behavior):
         self.behavior = behavior
-        self.arduinoMega.write(str(self.behavior) + ':' + '99.0:99.0:999:999:99:9:9:\r')
-        sleep(0.1)
-        self.arduinoUno.write(str(self.behavior) + ':' + '9:9:999:999;\r')  # Update with correct Uno message
-        sleep(0.1)
+        self.writeMega(str(self.behavior) + ':' + '99:99:999:999:99:9:9:\r')
+        #sleep(0.1)
+        self.writeUno(str(self.behavior) + ':' + '9:9:999:999;\r')  
+        #sleep(0.1)
 
     def move(self, Dir, amount):
         # This method includes moving the robot and moving the gripper(wrist and claw) and pan
+        print 'How many times'
         b = 10.375  # inches, distance between wheels
         if Dir == 'L' or Dir == 'l':
             distance = b*radians(float(amount))/2
@@ -71,18 +72,18 @@ class Robot:
             self.writeMega('9:' + "{:.2f}".format(-distance) + ':' + "{:.2f}".format(-distance) + ':' +
                                    '999:999:99:9:9:\r')
         elif Dir == 'W' or Dir == 'w':
-            self.writeMega('9:99.0:99.0:' + str(amount) + ':999:99:9:9:\r')
+            self.writeMega('9:99:99:' + str(amount) + ':999:99:9:9:\r')
         elif Dir == 'C' or Dir == 'c':
-            self.writeMega('9:99.0:99.0:999:' + str(amount) + ':99:9:9:\r')
+            self.writeMega('9:99:99:999:' + str(amount) + ':99:9:9:\r')
         elif Dir == 'P' or Dir == 'p':
             self.writeUno('9:9:9:' + str(amount) + ':999;\r')
         elif Dir == 'S' or Dir == 's':
-            self.writeMega('9:99.0:99.0:999:999:99:9:9:\r')
+            self.writeMega('9:99:99:999:999:99:9:9:\r')
 
     def requestMega(self):
         self.arduinoMega.flushInput()
-        self.writeMega('9:99.0:99.0:999:999:99:1:9:\r')
-        sleep(0.075)
+        self.writeMega('9:99:99:999:999:99:1:9:\r')
+        # sleep(0.075)
         message = self.arduinoMega.readline().split(':')
         # Parse the message here
         self.stateUpdate([message[0], message[1],  message[2]])
@@ -92,7 +93,7 @@ class Robot:
     def requestUno(self):
         self.arduinoUno.flushInput()
         self.writeUno('9:1:9:999:999:\r')
-        sleep(0.075)
+        # sleep(0.075)
         message = self.arduinoUno.readline().split(':')
         # Parse the message here
         self.Pan = int(message[0])

@@ -142,7 +142,7 @@ while Loop:
                 wrist = convertStr(raw_input())
                 if 30 < wrist < 175:
                     arduinoMega.flushInput()
-                    arduinoMega.write('9:0:0:' + str(wrist) + ':999:99:9:9:\r')
+                    arduinoMega.write('9:99:99:' + str(wrist) + ':999:99:9:9:\r')
                     sleep(0.01)
                     print arduinoMega.readline()
                 else:
