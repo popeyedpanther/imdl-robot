@@ -211,7 +211,6 @@ void messageParse(){
     if( temp != 99.00){rightDistance = temp;}
     if (leftDistance != 99.00 || rightDistance != 99.00){ 
       newDistance = true;
-      motionComplete = 0;
     }
     
     wristCmd = piMessage.readInt();

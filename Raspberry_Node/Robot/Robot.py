@@ -46,7 +46,7 @@ class Robot:
 
     def updateBehavior(self, behavior):
         self.behavior = behavior
-        self.arduinoMega.write(str(self.behavior) + ':' + '99:99:999:999:99:9:9:\r')
+        self.arduinoMega.write(str(self.behavior) + ':' + '99.00:99.00:999:999:99:9:9:\r')
         sleep(0.1)
         self.arduinoUno.write(str(self.behavior) + ':' + '9:9:999:999;\r')  # Update with correct Uno message
         sleep(0.1)
@@ -81,7 +81,7 @@ class Robot:
 
     def requestMega(self):
         self.arduinoMega.flushInput()
-        self.writeMega('9:0:0:999:999:99:1:9:\r')
+        self.writeMega('9:99.00:99.00:999:999:99:1:9:\r')
         sleep(0.075)
         message = self.arduinoMega.readline().split(':')
         # Parse the message here

@@ -31,6 +31,7 @@ void motorController(){
       isStopped = false;
       //Serial.println("I made it forward");
       newDistance = false;
+      motionComplete = 0;
       
     }
     else if(isStopped && motionDirection == 2){
@@ -42,6 +43,7 @@ void motorController(){
       isStopped = false;
       //Serial.println("I made it reverse");
       newDistance = false;
+      motionComplete = 0;
       
     }
     else if(isStopped && motionDirection == 3){
@@ -53,6 +55,7 @@ void motorController(){
       isStopped = false;
       //Serial.println("I made it left");
       newDistance = false;
+      motionComplete = 0;
       
     }
     else if(isStopped && motionDirection == 4){
@@ -64,6 +67,7 @@ void motorController(){
       isStopped = false;
       //Serial.println("I made it right");
       newDistance = false;
+      motionComplete = 0;
       
     }
     /*

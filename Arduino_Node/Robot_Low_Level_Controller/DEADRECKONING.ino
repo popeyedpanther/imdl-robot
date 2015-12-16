@@ -4,8 +4,7 @@ void deadReckoning(){
                   && abs(rightInput - rightStartPoint) > (abs(controllerRightDistance)-rightOffset) && !isStopped){
     
     motionDirection = 0;
-    motionComplete = 1;
-
+    
   }
   
   if((motionDirection != oldMotionDirection || motionDirection == 0) && !isStopped){
@@ -19,6 +18,7 @@ void deadReckoning(){
           // Have the wheels stopped moving?
           if(abs(leftStopPoint - leftEncoder.read()*C) < 0.00001 && abs(rightStopPoint - rightEncoder.read()*C) < 0.00001){
             isStopped = true;
+            motionComplete = 1;
             // Now doing a different motion
             oldMotionDirection = motionDirection;
           }

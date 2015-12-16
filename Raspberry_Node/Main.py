@@ -14,6 +14,7 @@ import struct
 
 # Stuff
 previousClock = 0.0
+moveClock = 0.0
 counter = 0
 
 # A bunch of logical variables
@@ -105,6 +106,7 @@ while continuousRun:
         counter += 1
         if Bob.blocksDone == 1:
             taskComplete = True
+            print "I'm Done"
         else:
             Bob.foundBlock = 0
             pickedupObject = False
